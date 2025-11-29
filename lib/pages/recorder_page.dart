@@ -19,16 +19,31 @@ class RecorderPage extends StatefulWidget {
 class _RecorderPageState extends State<RecorderPage> {
   final TranscriptionService _transcriptionService = TranscriptionService();
   final AudioPlayer _audioPlayer = AudioPlayer();
+  TextEditingController? _textController;
 
   String _status = "Initializing...";
   bool _isRecording = false;
   bool _isTranscribing = false;
   bool _isModelReady = false;
+  bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
+    _textController = TextEditingController(
+      text: widget.conversation.transcription,
+    );
     _initializeModel();
+  }
+
+  @override
+  void didUpdateWidget(RecorderPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.conversation.transcription !=
+            oldWidget.conversation.transcription &&
+        !_isEditing) {
+      _textController?.text = widget.conversation.transcription;
+    }
   }
 
   Future<void> _initializeModel() async {
@@ -85,6 +100,9 @@ class _RecorderPageState extends State<RecorderPage> {
         widget.conversation.isRecording = false;
         await provider.updateConversation(widget.conversation);
 
+        // Update controller
+        _textController?.text = widget.conversation.transcription;
+
         setState(() {
           _isTranscribing = false;
           _status = "Ready to record";
@@ -111,6 +129,38 @@ class _RecorderPageState extends State<RecorderPage> {
         setState(() => _status = "Error: $e");
       }
     }
+  }
+
+  void _toggleEdit() {
+    setState(() {
+      _isEditing = !_isEditing;
+      if (_isEditing) {
+        _textController ??= TextEditingController(
+          text: widget.conversation.transcription,
+        );
+        _textController!.text = widget.conversation.transcription;
+      }
+    });
+  }
+
+  Future<void> _saveEdits() async {
+    final provider = Provider.of<ConversationProvider>(context, listen: false);
+
+    if (_textController != null) {
+      widget.conversation.transcription = _textController!.text;
+      await provider.updateConversation(widget.conversation);
+    }
+
+    setState(() {
+      _isEditing = false;
+      _status = "Changes saved";
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted && _status == "Changes saved") {
+        setState(() => _status = "Ready to record");
+      }
+    });
   }
 
   Future<void> _showApiKeySetup() async {
@@ -140,6 +190,7 @@ class _RecorderPageState extends State<RecorderPage> {
   void dispose() {
     _audioPlayer.dispose();
     _transcriptionService.dispose();
+    _textController?.dispose();
     super.dispose();
   }
 
@@ -250,6 +301,42 @@ class _RecorderPageState extends State<RecorderPage> {
                     ),
                   ),
                 ),
+                if (!_isRecording &&
+                    !_isTranscribing &&
+                    widget.conversation.transcription.isNotEmpty)
+                  if (_isEditing)
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: _toggleEdit,
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _saveEdits,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00D9FF),
+                            foregroundColor: const Color(0xFF1A1A2E),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                          ),
+                          child: const Text('Save'),
+                        ),
+                      ],
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Color(0xFF00D9FF)),
+                      tooltip: 'Edit Transcript',
+                      onPressed: _toggleEdit,
+                    ),
               ],
             ),
           ),
@@ -260,7 +347,7 @@ class _RecorderPageState extends State<RecorderPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               child: SingleChildScrollView(
-                child: widget.conversation.transcription.isEmpty
+                child: widget.conversation.transcription.isEmpty && !_isEditing
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -287,22 +374,44 @@ class _RecorderPageState extends State<RecorderPage> {
                         decoration: BoxDecoration(
                           color: const Color(0xFF16213E),
                           borderRadius: BorderRadius.circular(12),
+                          border: _isEditing
+                              ? Border.all(
+                                  color: const Color(
+                                    0xFF00D9FF,
+                                  ).withValues(alpha: 0.5),
+                                )
+                              : null,
                         ),
-                        child: Text(
-                          widget.conversation.transcription,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            height: 1.6,
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: _isEditing
+                            ? TextField(
+                                controller: _textController,
+                                maxLines: null,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  height: 1.6,
+                                  color: Colors.white,
+                                ),
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: 'Enter transcription...',
+                                  hintStyle: TextStyle(color: Colors.white54),
+                                ),
+                              )
+                            : Text(
+                                widget.conversation.transcription,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  height: 1.6,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
               ),
             ),
           ),
         ],
       ),
-      floatingActionButton: _isModelReady
+      floatingActionButton: _isModelReady && !_isEditing
           ? SizedBox(
               width: 72,
               height: 72,
