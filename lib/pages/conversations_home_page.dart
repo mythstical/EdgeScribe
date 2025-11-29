@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/conversation.dart';
 import '../providers/conversation_provider.dart';
 import '../screens/new_conversation_dialog.dart';
-import 'recorder_page.dart';
+import 'conversation_details_page.dart';
 
 import '../screens/api_key_setup_screen.dart';
 import '../services/transcription_service.dart';
@@ -48,10 +48,11 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
     );
 
     if (conversation != null && mounted) {
-      // Navigate to recorder page
+      // Navigate to details page
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => RecorderPage(conversation: conversation),
+          builder: (context) =>
+              ConversationDetailsPage(conversation: conversation),
         ),
       );
     }
@@ -201,7 +202,7 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) =>
-                      RecorderPage(conversation: conversation),
+                      ConversationDetailsPage(conversation: conversation),
                 ),
               );
             },

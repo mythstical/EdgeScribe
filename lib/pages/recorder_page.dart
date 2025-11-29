@@ -9,8 +9,13 @@ import '../screens/api_key_setup_screen.dart';
 /// Recorder page for a specific conversation
 class RecorderPage extends StatefulWidget {
   final Conversation conversation;
+  final bool showAppBar;
 
-  const RecorderPage({super.key, required this.conversation});
+  const RecorderPage({
+    super.key,
+    required this.conversation,
+    this.showAppBar = true,
+  });
 
   @override
   State<RecorderPage> createState() => _RecorderPageState();
@@ -212,47 +217,52 @@ class _RecorderPageState extends State<RecorderPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF16213E),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.conversation.patientName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
+      appBar: widget.showAppBar
+          ? AppBar(
+              backgroundColor: const Color(0xFF16213E),
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
               ),
-            ),
-            Text(
-              widget.conversation.context,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 12,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.conversation.patientName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Text(
+                    widget.conversation.context,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: Color(0xFF00D9FF)),
-            tooltip: 'Configure API Key',
-            onPressed: _showApiKeySetup,
-          ),
-          if (!_isRecording && !_isTranscribing)
-            IconButton(
-              icon: const Icon(Icons.play_arrow, color: Color(0xFF00D9FF)),
-              tooltip: 'Play Last Recording',
-              onPressed: _playLastRecording,
-            ),
-        ],
-      ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings, color: Color(0xFF00D9FF)),
+                  tooltip: 'Configure API Key',
+                  onPressed: _showApiKeySetup,
+                ),
+                if (!_isRecording && !_isTranscribing)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.play_arrow,
+                      color: Color(0xFF00D9FF),
+                    ),
+                    tooltip: 'Play Last Recording',
+                    onPressed: _playLastRecording,
+                  ),
+              ],
+            )
+          : null,
       body: Column(
         children: [
           // Status Bar
@@ -301,6 +311,15 @@ class _RecorderPageState extends State<RecorderPage> {
                     ),
                   ),
                 ),
+                if (!widget.showAppBar && !_isRecording && !_isTranscribing)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.play_arrow,
+                      color: Color(0xFF00D9FF),
+                    ),
+                    tooltip: 'Play Last Recording',
+                    onPressed: _playLastRecording,
+                  ),
                 if (!_isRecording &&
                     !_isTranscribing &&
                     widget.conversation.transcription.isNotEmpty)
