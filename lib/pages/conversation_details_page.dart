@@ -39,60 +39,85 @@ class _ConversationDetailsPageState extends State<ConversationDetailsPage> {
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 3,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF1A1A2E),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF16213E),
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.conversation.patientName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                ),
+      child: Stack(
+        children: [
+          // Global Gradient Background
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0F172A), // Slate 900
+                  Color(0xFF1E293B), // Slate 800
+                  Color(0xFF0F172A), // Slate 900
+                ],
               ),
-              Text(
-                widget.conversation.context,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings, color: Color(0xFF00D9FF)),
-              tooltip: 'Configure API Key',
-              onPressed: _showApiKeySetup,
             ),
-          ],
-          bottom: const TabBar(
-            indicatorColor: Color(0xFF00D9FF),
-            labelColor: Color(0xFF00D9FF),
-            unselectedLabelColor: Colors.white54,
-            tabs: [
-              Tab(icon: Icon(Icons.mic), text: 'Transcript'),
-              Tab(icon: Icon(Icons.format_align_left), text: 'Formatting'),
-              Tab(icon: Icon(Icons.lightbulb_outline), text: 'Opportunities'),
-            ],
           ),
-        ),
-        body: TabBarView(
-          children: [
-            RecorderPage(conversation: widget.conversation, showAppBar: false),
-            PrivacyPage(conversation: widget.conversation),
-            OpportunitiesPage(conversation: widget.conversation),
-          ],
-        ),
+          // Content
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.conversation.patientName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Text(
+                    widget.conversation.context,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings, color: Color(0xFF00D9FF)),
+                  tooltip: 'Configure API Key',
+                  onPressed: _showApiKeySetup,
+                ),
+              ],
+              bottom: const TabBar(
+                indicatorColor: Color(0xFF00D9FF),
+                labelColor: Color(0xFF00D9FF),
+                unselectedLabelColor: Colors.white54,
+                tabs: [
+                  Tab(icon: Icon(Icons.mic), text: 'Transcript'),
+                  Tab(icon: Icon(Icons.format_align_left), text: 'Formatting'),
+                  Tab(
+                    icon: Icon(Icons.lightbulb_outline),
+                    text: 'Opportunities',
+                  ),
+                ],
+              ),
+            ),
+            body: TabBarView(
+              children: [
+                RecorderPage(
+                  conversation: widget.conversation,
+                  showAppBar: false,
+                ),
+                PrivacyPage(conversation: widget.conversation),
+                OpportunitiesPage(conversation: widget.conversation),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
