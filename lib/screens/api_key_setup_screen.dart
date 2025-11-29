@@ -56,11 +56,17 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         title: const Text('Setup Picovoice Leopard'),
-        backgroundColor: Colors.purple,
-        automaticallyImplyLeading: false, // No back button
+        backgroundColor: const Color(0xFF16213E),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -70,7 +76,13 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
             const SizedBox(height: 20),
 
             // Icon
-            Center(child: Icon(Icons.key, size: 80, color: Colors.purple[300])),
+            Center(
+              child: Icon(
+                Icons.key,
+                size: 80,
+                color: const Color(0xFF00D9FF).withValues(alpha: 0.8),
+              ),
+            ),
 
             const SizedBox(height: 32),
 
@@ -94,7 +106,7 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
               style: TextStyle(
                 fontSize: 16,
                 height: 1.5,
-                color: Colors.grey[300],
+                color: Colors.white.withValues(alpha: 0.7),
               ),
             ),
 
@@ -107,24 +119,33 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Picovoice AccessKey',
-                labelStyle: TextStyle(color: Colors.purple[300]),
+                labelStyle: TextStyle(
+                  color: const Color(0xFF00D9FF).withValues(alpha: 0.8),
+                ),
                 hintText: 'Paste your key here',
-                hintStyle: TextStyle(color: Colors.grey[600]),
-                prefixIcon: const Icon(Icons.vpn_key, color: Colors.purple),
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
+                prefixIcon: const Icon(Icons.vpn_key, color: Color(0xFF00D9FF)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.purple),
+                  borderSide: const BorderSide(color: Color(0xFF00D9FF)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[700]!),
+                  borderSide: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.purple, width: 2),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF00D9FF),
+                    width: 2,
+                  ),
                 ),
                 filled: true,
-                fillColor: Colors.grey[850],
+                fillColor: const Color(0xFF16213E),
                 errorText: _errorMessage,
               ),
               maxLines: 1,
@@ -137,18 +158,27 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
+                color: const Color(0xFF00D9FF).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: const Color(0xFF00D9FF).withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                  const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFF00D9FF),
+                    size: 20,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Get your free key at console.picovoice.ai',
-                      style: TextStyle(color: Colors.blue[200], fontSize: 14),
+                      style: TextStyle(
+                        color: const Color(0xFF00D9FF).withValues(alpha: 0.8),
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ],
@@ -164,7 +194,8 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
                 onPressed: _isLoading ? null : _saveAndContinue,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.purple,
+                  backgroundColor: const Color(0xFF00D9FF),
+                  foregroundColor: const Color(0xFF1A1A2E),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -174,15 +205,15 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: Color(0xFF1A1A2E),
                           strokeWidth: 2,
                         ),
                       )
                     : const Text(
                         'Save & Continue',
                         style: TextStyle(
-                          color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
               ),
