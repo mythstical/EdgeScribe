@@ -312,6 +312,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
+  leopard_flutter:
+    dependency: "direct main"
+    description:
+      name: leopard_flutter
+      sha256: "3a69219b280fceb46cff8fcf547096b2d2ee8f0dc6bbbfc27441086f3688a5eb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.4"
   lints:
     dependency: transitive
     description:

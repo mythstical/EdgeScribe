@@ -34,8 +34,9 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  cactus: ^1.2.0
   flutter_secure_storage: ^9.2.4
+  leopard_flutter: ^2.0.4
+  cactus: ^1.2.0
   provider: ^6.1.5+1
   path_provider: ^2.1.5
   http: ^1.6.0
@@ -63,8 +64,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-
   assets:
+    - assets/leopard_model.pv
     - assets/medical_terms.txt
     - assets/cities.txt
 
