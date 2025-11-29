@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 import '../models/conversation.dart';
 import '../providers/conversation_provider.dart';
-import '../services/medical_redaction_service.dart';
+import '../services/medical_redactor_service.dart';
+import '../services/soap_generation_service.dart';
 
 class PrivacyPage extends StatefulWidget {
   final Conversation conversation;
@@ -14,11 +18,16 @@ class PrivacyPage extends StatefulWidget {
 }
 
 class _PrivacyPageState extends State<PrivacyPage> {
-  final MedicalRedactionService _redactionService = MedicalRedactionService();
+  final MedicalRedactorService _redactionService = MedicalRedactorService();
   late TextEditingController _textController;
   bool _isRedacting = false;
   bool _isEditing = false;
   bool _isApproved = false;
+  String _currentText = '';
+  ReversibleRedactionResult? _reversibleResult;
+  final SoapGenerationService _soapService = SoapGenerationService();
+  bool _isGeneratingSoap = false;
+  String? _generatedSoapNote;
 
   @override
   void initState() {
@@ -30,7 +39,7 @@ class _PrivacyPageState extends State<PrivacyPage> {
   }
 
   Future<void> _loadDictionaries() async {
-    await _redactionService.loadDictionaries();
+    // Dictionaries are loaded statically in MedicalRedactorService
     // Initialize LLM if needed, but maybe lazy load on action
     if (mounted) setState(() {});
   }
@@ -54,21 +63,24 @@ class _PrivacyPageState extends State<PrivacyPage> {
 
     try {
       // Initialize LLM first if needed
-      if (!_redactionService.llmReady) {
-        await _redactionService.initializeLLM();
+      // Ensure LLM is ready if we want to use it
+      if (!_redactionService.isReady) {
+        await _redactionService.initialize();
       }
 
-      final result = await _redactionService.redact(
-        widget.conversation.transcription,
-        enableLLM: true,
+      // Run reversible redaction
+      final result = await _redactionService.redactForCloud(
+        _currentText.isEmpty ? widget.conversation.transcription : _currentText,
       );
 
       if (mounted) {
         setState(() {
-          _textController.text = result.redactedText;
+          _reversibleResult = result;
+          _currentText = result.redactedText;
+          _textController.text = _currentText; // Update text controller
           _isRedacting = false;
-          _saveRedaction(result.redactedText);
         });
+        _saveRedaction(result.redactedText); // Save the new redacted text
       }
     } catch (e) {
       if (mounted) {
@@ -108,172 +120,463 @@ class _PrivacyPageState extends State<PrivacyPage> {
 
   @override
   Widget build(BuildContext context) {
-    // If no transcription, show empty state
     if (widget.conversation.transcription.isEmpty) {
       return Center(
         child: Text(
-          'No transcript available to redact.',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+          'NO TRANSCRIPT DATA',
+          style: GoogleFonts.robotoMono(
+            color: Colors.white54,
+            letterSpacing: 1.5,
+          ),
         ),
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+    return DefaultTabController(
+      length: 2,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Actions Card
+          // Custom Tab Bar
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF16213E),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                if (_isRedacting)
-                  const Column(
-                    children: [
-                      CircularProgressIndicator(color: Color(0xFF00D9FF)),
-                      SizedBox(height: 16),
-                      Text(
-                        'Redacting PII...',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  )
-                else if (_textController.text.isEmpty)
-                  ElevatedButton.icon(
-                    onPressed: _runRedaction,
-                    icon: const Icon(Icons.shield),
-                    label: const Text('Redact PII'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00D9FF),
-                      foregroundColor: const Color(0xFF1A1A2E),
-                      minimumSize: const Size(double.infinity, 48),
-                    ),
-                  )
-                else
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _runRedaction,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Re-run'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF00D9FF),
-                            side: const BorderSide(color: Color(0xFF00D9FF)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _isApproved ? null : _approveRedaction,
-                          icon: const Icon(Icons.check_circle),
-                          label: const Text('Approve'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00FF88),
-                            foregroundColor: const Color(0xFF1A1A2E),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+            color: Colors.black,
+            child: TabBar(
+              indicatorColor: const Color(0xFFD71921),
+              indicatorWeight: 3,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white38,
+              labelStyle: GoogleFonts.robotoMono(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+              unselectedLabelStyle: GoogleFonts.robotoMono(
+                fontWeight: FontWeight.normal,
+                fontSize: 12,
+              ),
+              tabs: const [
+                Tab(text: 'REDACTION'),
+                Tab(text: 'SOAP NOTE'),
               ],
             ),
           ),
-          const SizedBox(height: 16),
 
-          // Redacted Text Area
-          if (_textController.text.isNotEmpty || _isEditing)
+          Expanded(
+            child: TabBarView(
+              children: [_buildRedactionView(), _buildSoapNoteView()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRedactionView() {
+    return Container(
+      color: Colors.black,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Control Center
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFF16213E),
-                borderRadius: BorderRadius.circular(12),
-                border: _isEditing
-                    ? Border.all(
-                        color: const Color(0xFF00D9FF).withValues(alpha: 0.5),
-                      )
-                    : null,
+                color: const Color(0xFF111111),
+                border: Border.all(color: Colors.white24, width: 1),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Redacted Transcript',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          _isEditing ? Icons.save : Icons.edit,
-                          color: const Color(0xFF00D9FF),
-                        ),
-                        onPressed: _toggleEdit,
-                        tooltip: _isEditing ? 'Save' : 'Edit',
-                      ),
-                    ],
+                  Text(
+                    'CONTROL CENTER',
+                    style: GoogleFonts.robotoMono(
+                      color: Colors.white54,
+                      fontSize: 10,
+                      letterSpacing: 1.5,
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  _isEditing
-                      ? TextField(
-                          controller: _textController,
-                          maxLines: null,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            height: 1.6,
-                          ),
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                          ),
-                        )
-                      : Text(
-                          _textController.text,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            height: 1.6,
+                  const SizedBox(height: 16),
+                  if (_isRedacting)
+                    Row(
+                      children: [
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFFD71921),
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'PROCESSING PII...',
+                          style: GoogleFonts.robotoMono(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    )
+                  else if (_textController.text.isEmpty)
+                    _buildNothingButton(
+                      label: 'REDACT PII',
+                      icon: Icons.shield_outlined,
+                      onPressed: _runRedaction,
+                      isPrimary: true,
+                    )
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildNothingButton(
+                            label: 'RERUN',
+                            icon: Icons.refresh,
+                            onPressed: _runRedaction,
+                            isPrimary: false,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildNothingButton(
+                            label: 'APPROVE',
+                            icon: Icons.check_circle_outline,
+                            onPressed: _isApproved ? null : _approveRedaction,
+                            isPrimary: true,
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
-
-          // SOAP Note Button (Placeholder)
-          if (_isApproved) ...[
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('SOAP Note generation coming soon!'),
+
+            // Redacted Text Area
+            if (_textController.text.isNotEmpty || _isEditing)
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111111),
+                  border: Border.all(
+                    color: _isEditing
+                        ? const Color(0xFFD71921)
+                        : Colors.white12,
+                    width: 1,
                   ),
-                );
-              },
-              icon: const Icon(Icons.description),
-              label: const Text('Generate SOAP Note'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9B59B6),
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'REDACTED OUTPUT',
+                            style: GoogleFonts.robotoMono(
+                              color: Colors.white54,
+                              fontSize: 10,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              _isEditing ? Icons.save : Icons.edit_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            onPressed: _toggleEdit,
+                            tooltip: _isEditing ? 'SAVE' : 'EDIT',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: Colors.white12),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: _isEditing
+                          ? TextField(
+                              controller: _textController,
+                              maxLines: null,
+                              style: GoogleFonts.robotoMono(
+                                color: Colors.white,
+                                fontSize: 14,
+                                height: 1.6,
+                              ),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                              ),
+                            )
+                          : SelectableText(
+                              _textController.text,
+                              style: GoogleFonts.robotoMono(
+                                color: Colors.white,
+                                fontSize: 14,
+                                height: 1.6,
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
               ),
-            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSoapNoteView() {
+    return Container(
+      color: Colors.black,
+      child: _isGeneratingSoap
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFFD71921),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'GENERATING NOTE...',
+                    style: GoogleFonts.robotoMono(
+                      color: Colors.white,
+                      fontSize: 12,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : _generatedSoapNote == null
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.description_outlined,
+                    size: 48,
+                    color: Colors.white24,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'NO NOTE GENERATED',
+                    style: GoogleFonts.robotoMono(
+                      color: Colors.white54,
+                      fontSize: 12,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  _buildNothingButton(
+                    label: 'GENERATE SOAP',
+                    icon: Icons.auto_awesome,
+                    onPressed: _isApproved ? _generateSoapNote : null,
+                    isPrimary: true,
+                  ),
+                  if (!_isApproved)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Text(
+                        'APPROVE REDACTION FIRST',
+                        style: GoogleFonts.robotoMono(
+                          color: const Color(0xFFD71921),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111111),
+                      border: Border.all(color: Colors.white24, width: 1),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'SOAP NOTE',
+                                style: GoogleFonts.robotoMono(
+                                  color: Colors.white54,
+                                  fontSize: 10,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.refresh,
+                                      color: Colors.white54,
+                                      size: 20,
+                                    ),
+                                    onPressed: _generateSoapNote,
+                                    tooltip: 'REGENERATE',
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.copy,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      Clipboard.setData(
+                                        ClipboardData(
+                                          text: _generatedSoapNote!,
+                                        ),
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('COPIED TO CLIPBOARD'),
+                                          backgroundColor: Color(0xFF111111),
+                                        ),
+                                      );
+                                    },
+                                    tooltip: 'COPY',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(height: 1, color: Colors.white12),
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: SelectableText(
+                            _generatedSoapNote!,
+                            style: GoogleFonts.robotoMono(
+                              color: Colors.white,
+                              fontSize: 14,
+                              height: 1.6,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildNothingButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback? onPressed,
+    required bool isPrimary,
+  }) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isPrimary
+            ? const Color(0xFFD71921)
+            : Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        side: isPrimary ? null : const BorderSide(color: Colors.white24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: GoogleFonts.robotoMono(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              letterSpacing: 1.0,
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _generateSoapNote() async {
+    // Use stored result if available, otherwise run redaction
+    ReversibleRedactionResult? result = _reversibleResult;
+
+    if (result == null) {
+      final originalText = widget.conversation.transcription;
+      if (originalText.isEmpty) return;
+
+      try {
+        result = await _redactionService.redactForCloud(originalText);
+        setState(() {
+          _reversibleResult = result;
+          _currentText = result!.redactedText;
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Redaction failed: $e')));
+        }
+        return;
+      }
+    }
+
+    setState(() {
+      _isGeneratingSoap = true;
+      _generatedSoapNote = null;
+    });
+
+    try {
+      // 2. Send to Cloud LLM
+      final soapNote = await _soapService.generateSoapNote(
+        transcript: result.redactedText,
+      );
+
+      // 3. Restore PII
+      final restoredSoapNote = _redactionService.restoreRedactions(
+        soapNote,
+        result.mapping,
+      );
+
+      if (mounted) {
+        setState(() {
+          _generatedSoapNote = restoredSoapNote;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error generating SOAP note: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGeneratingSoap = false;
+        });
+      }
+    }
   }
 }

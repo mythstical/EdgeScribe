@@ -1,31 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/transcription_service.dart';
+import '../services/soap_generation_service.dart';
 
 /// API Key setup screen for first-time users
 class ApiKeySetupScreen extends StatefulWidget {
   final TranscriptionService leopardService;
+  final SoapGenerationService soapService;
 
-  const ApiKeySetupScreen({super.key, required this.leopardService});
+  const ApiKeySetupScreen({
+    super.key,
+    required this.leopardService,
+    required this.soapService,
+  });
 
   @override
   State<ApiKeySetupScreen> createState() => _ApiKeySetupScreenState();
 }
 
 class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
-  final TextEditingController _keyController = TextEditingController();
+  final TextEditingController _picovoiceKeyController = TextEditingController();
+  final TextEditingController _openRouterKeyController =
+      TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    _loadKeys();
+  }
+
+  Future<void> _loadKeys() async {
+    final openRouterKey = await widget.soapService.getStoredApiKey();
+    if (openRouterKey != null && mounted) {
+      _openRouterKeyController.text = openRouterKey;
+    }
+  }
+
+  @override
   void dispose() {
-    _keyController.dispose();
+    _picovoiceKeyController.dispose();
+    _openRouterKeyController.dispose();
     super.dispose();
   }
 
   Future<void> _saveAndContinue() async {
-    final key = _keyController.text.trim();
+    final picovoiceKey = _picovoiceKeyController.text.trim();
+    final openRouterKey = _openRouterKeyController.text.trim();
 
-    if (key.isEmpty) {
+    if (picovoiceKey.isEmpty) {
       setState(() {
         _errorMessage = 'Please enter your Picovoice AccessKey';
       });
@@ -39,7 +63,12 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
 
     try {
       // Save and initialize Leopard
-      await widget.leopardService.setApiKey(key);
+      await widget.leopardService.setApiKey(picovoiceKey);
+
+      // Save OpenRouter Key (optional)
+      if (openRouterKey.isNotEmpty) {
+        await widget.soapService.setApiKey(openRouterKey);
+      }
 
       if (mounted) {
         // Success - close this screen
@@ -56,16 +85,23 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Setup Picovoice Leopard'),
-        backgroundColor: const Color(0xFF16213E),
+        title: Text(
+          'SETUP API KEYS',
+          style: GoogleFonts.robotoMono(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.0,
+          ),
+        ),
+        backgroundColor: Colors.black,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        titleTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.white24, height: 1),
         ),
       ),
       body: SingleChildScrollView(
@@ -77,22 +113,32 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
 
             // Icon
             Center(
-              child: Icon(
-                Icons.key,
-                size: 80,
-                color: const Color(0xFF00D9FF).withValues(alpha: 0.8),
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111111),
+                  borderRadius: BorderRadius.circular(50),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: const Icon(
+                  Icons.vpn_key_outlined,
+                  size: 40,
+                  color: Colors.white,
+                ),
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
 
             // Title
-            const Text(
-              'Welcome to EdgeScribe!',
-              style: TextStyle(
-                fontSize: 28,
+            Text(
+              'WELCOME TO EDGESCRIBE',
+              style: GoogleFonts.robotoMono(
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
+                letterSpacing: 1.5,
               ),
             ),
 
@@ -100,92 +146,129 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
 
             // Description
             Text(
-              'EdgeScribe uses Picovoice Leopard for fast, accurate transcription.\n\n'
-              'To get started, enter your Picovoice AccessKey below.\n'
-              '(Free tier: 3 hours/month processing)',
-              style: TextStyle(
-                fontSize: 16,
-                height: 1.5,
-                color: Colors.white.withValues(alpha: 0.7),
+              'Configure your API keys to enable transcription and SOAP note generation features.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                height: 1.6,
+                color: Colors.white54,
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
 
-            // API Key Input
+            // Picovoice API Key Input
             TextField(
-              controller: _keyController,
+              controller: _picovoiceKeyController,
               enabled: !_isLoading,
-              style: const TextStyle(color: Colors.white),
+              style: GoogleFonts.robotoMono(color: Colors.white),
               decoration: InputDecoration(
-                labelText: 'Picovoice AccessKey',
-                labelStyle: TextStyle(
-                  color: const Color(0xFF00D9FF).withValues(alpha: 0.8),
+                labelText: 'PICOVOICE ACCESSKEY (REQUIRED)',
+                labelStyle: GoogleFonts.robotoMono(
+                  color: Colors.white54,
+                  fontSize: 12,
                 ),
-                hintText: 'Paste your key here',
-                hintStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
+                hintText: 'PASTE YOUR PICOVOICE KEY',
+                hintStyle: GoogleFonts.robotoMono(
+                  color: Colors.white24,
+                  fontSize: 12,
                 ),
-                prefixIcon: const Icon(Icons.vpn_key, color: Color(0xFF00D9FF)),
+                prefixIcon: const Icon(
+                  Icons.mic_none_outlined,
+                  color: Colors.white54,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF00D9FF)),
+                  borderSide: const BorderSide(color: Colors.white24),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.3),
-                  ),
+                  borderSide: const BorderSide(color: Colors.white24),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                    color: Color(0xFF00D9FF),
-                    width: 2,
+                    color: Color(0xFFD71921),
+                    width: 1,
                   ),
                 ),
                 filled: true,
-                fillColor: const Color(0xFF16213E),
+                fillColor: const Color(0xFF111111),
                 errorText: _errorMessage,
+                errorStyle: GoogleFonts.robotoMono(
+                  color: const Color(0xFFD71921),
+                ),
               ),
               maxLines: 1,
               obscureText: false,
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
-            // Help Text
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF00D9FF).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(0xFF00D9FF).withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: Color(0xFF00D9FF),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Get your free key at console.picovoice.ai',
-                      style: TextStyle(
-                        color: const Color(0xFF00D9FF).withValues(alpha: 0.8),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
+            // Picovoice Help Text
+            Text(
+              'GET FREE KEY AT CONSOLE.PICOVOICE.AI',
+              style: GoogleFonts.robotoMono(
+                color: Colors.white24,
+                fontSize: 10,
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+
+            // OpenRouter API Key Input
+            TextField(
+              controller: _openRouterKeyController,
+              enabled: !_isLoading,
+              style: GoogleFonts.robotoMono(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'OPENROUTER API KEY (OPTIONAL)',
+                labelStyle: GoogleFonts.robotoMono(
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
+                hintText: 'PASTE YOUR OPENROUTER KEY',
+                hintStyle: GoogleFonts.robotoMono(
+                  color: Colors.white24,
+                  fontSize: 12,
+                ),
+                prefixIcon: const Icon(
+                  Icons.cloud_outlined,
+                  color: Colors.white54,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFD71921),
+                    width: 1,
+                  ),
+                ),
+                filled: true,
+                fillColor: const Color(0xFF111111),
+              ),
+              maxLines: 1,
+              obscureText: true,
+            ),
+
+            const SizedBox(height: 8),
+
+            // OpenRouter Help Text
+            Text(
+              'REQUIRED FOR SOAP NOTE GENERATION',
+              style: GoogleFonts.robotoMono(
+                color: Colors.white24,
+                fontSize: 10,
+              ),
+            ),
+
+            const SizedBox(height: 40),
 
             // Button
             SizedBox(
@@ -193,27 +276,30 @@ class _ApiKeySetupScreenState extends State<ApiKeySetupScreen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _saveAndContinue,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: const Color(0xFF00D9FF),
-                  foregroundColor: const Color(0xFF1A1A2E),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  backgroundColor: const Color(0xFFD71921),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(30),
                   ),
+                  disabledBackgroundColor: const Color(0xFF111111),
                 ),
                 child: _isLoading
                     ? const SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                          color: Color(0xFF1A1A2E),
+                          color: Colors.white,
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Save & Continue',
-                        style: TextStyle(
+                    : Text(
+                        'SAVE & CONTINUE',
+                        style: GoogleFonts.robotoMono(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 14,
+                          letterSpacing: 1.0,
                         ),
                       ),
               ),

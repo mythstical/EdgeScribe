@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/conversation_provider.dart';
 import 'services/cactus_model_service.dart';
-import 'pages/main_page.dart';
+import 'pages/conversations_home_page.dart';
 
 void main() async {
   // Ensure Flutter is initialized
@@ -67,7 +67,9 @@ class _AppBootScreenState extends State<AppBootScreen> {
           Future.microtask(() {
             if (mounted && context.mounted) {
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const MainPage()),
+                MaterialPageRoute(
+                  builder: (_) => const ConversationsHomePage(),
+                ),
               );
             }
           });

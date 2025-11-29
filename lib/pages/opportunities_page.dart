@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import '../models/conversation.dart';
 import '../services/opportunities_service.dart';
@@ -69,6 +70,8 @@ class _OpportunitiesPageState extends State<OpportunitiesPage>
     }
   }
 
+  // ... (imports remain the same)
+
   @override
   Widget build(BuildContext context) {
     // Safety init for hot reload
@@ -78,99 +81,84 @@ class _OpportunitiesPageState extends State<OpportunitiesPage>
     );
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F172A), // Slate 900
-              Color(0xFF1E293B), // Slate 800
-              Color(0xFF0F172A), // Slate 900
-            ],
-          ),
-        ),
-        child: Column(
-          children: [
-            // Header / Status
-            _buildHeader(),
+      backgroundColor: Colors.black,
+      body: Column(
+        children: [
+          // Header / Status
+          _buildHeader(),
 
-            // Content
-            Expanded(
-              child: _isLoading
-                  ? _buildLoadingState()
-                  : _opportunities.isEmpty
-                  ? _buildEmptyState()
-                  : _buildList(),
-            ),
-          ],
-        ),
+          // Content
+          Expanded(
+            child: _isLoading
+                ? _buildLoadingState()
+                : _opportunities.isEmpty
+                ? _buildEmptyState()
+                : _buildList(),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E293B).withValues(alpha: 0.7),
-            border: Border(
-              bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        border: Border(bottom: BorderSide(color: Colors.white24, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111111),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: const Icon(
+              Icons.auto_awesome,
+              color: Colors.white,
+              size: 20,
             ),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFB800).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _isLoading
+                      ? 'ANALYZING CONVERSATION...'
+                      : 'ANALYSIS COMPLETE',
+                  style: GoogleFonts.robotoMono(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  color: Color(0xFFFFB800),
-                  size: 20,
+                const SizedBox(height: 4),
+                Text(
+                  _isLoading
+                      ? 'IDENTIFYING OPPORTUNITIES...'
+                      : '${_opportunities.length} OPPORTUNITIES FOUND',
+                  style: GoogleFonts.inter(
+                    color: Colors.white54,
+                    fontSize: 10,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _isLoading
-                          ? 'Analyzing conversation...'
-                          : 'Analysis Complete',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      _isLoading
-                          ? 'Identifying opportunities...'
-                          : '${_opportunities.length} opportunities found',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (!_isLoading)
-                IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white54),
-                  onPressed: _findOpportunities,
-                  tooltip: 'Refresh',
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
+          if (!_isLoading)
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: _findOpportunities,
+              tooltip: 'REFRESH',
+            ),
+        ],
       ),
     );
   }
@@ -184,25 +172,27 @@ class _OpportunitiesPageState extends State<OpportunitiesPage>
             width: 40,
             height: 40,
             child: CircularProgressIndicator(
-              color: Color(0xFFFFB800),
-              strokeWidth: 3,
+              color: Color(0xFFD71921),
+              strokeWidth: 2,
             ),
           ),
           const SizedBox(height: 24),
           Text(
-            'Analyzing Context',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+            'ANALYZING CONTEXT',
+            style: GoogleFonts.robotoMono(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Searching for relevant programs...',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 14,
+            'SEARCHING FOR RELEVANT PROGRAMS...',
+            style: GoogleFonts.inter(
+              color: Colors.white38,
+              fontSize: 10,
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -218,21 +208,23 @@ class _OpportunitiesPageState extends State<OpportunitiesPage>
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: const Color(0xFF111111),
               shape: BoxShape.circle,
+              border: Border.all(color: Colors.white24),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.search_off,
-              size: 48,
-              color: Colors.white.withValues(alpha: 0.2),
+              size: 40,
+              color: Colors.white54,
             ),
           ),
           const SizedBox(height: 24),
           Text(
-            'No opportunities found',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 16,
+            'NO OPPORTUNITIES FOUND',
+            style: GoogleFonts.robotoMono(
+              color: Colors.white54,
+              fontSize: 14,
+              letterSpacing: 1.0,
             ),
           ),
         ],
@@ -242,10 +234,9 @@ class _OpportunitiesPageState extends State<OpportunitiesPage>
 
   Widget _buildList() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       itemCount: _opportunities.length,
       itemBuilder: (context, index) {
-        // Staggered animation
         final animation = CurvedAnimation(
           parent: _controller!,
           curve: Interval(
@@ -273,100 +264,78 @@ class _OpportunitiesPageState extends State<OpportunitiesPage>
     // Determine color based on score
     Color scoreColor;
     if (opportunity.score >= 0.9) {
-      scoreColor = const Color(0xFF10B981); // Emerald
+      scoreColor = Colors.white;
     } else if (opportunity.score >= 0.8) {
-      scoreColor = const Color(0xFFFFB800); // Amber
+      scoreColor = Colors.white70;
     } else {
-      scoreColor = const Color(0xFFF59E0B); // Orange
+      scoreColor = Colors.white54;
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.1),
-            Colors.white.withValues(alpha: 0.05),
-          ],
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white24, width: 1),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {},
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: scoreColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: scoreColor.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Text(
-                              opportunity.category.toUpperCase(),
-                              style: TextStyle(
-                                color: scoreColor,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Text(
+                          opportunity.category.toUpperCase(),
+                          style: GoogleFonts.robotoMono(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            opportunity.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            opportunity.description,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 14,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    _buildCircularScore(opportunity.score, scoreColor),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        opportunity.title.toUpperCase(),
+                        style: GoogleFonts.robotoMono(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        opportunity.description,
+                        style: GoogleFonts.inter(
+                          color: Colors.white54,
+                          fontSize: 12,
+                          height: 1.6,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 20),
+                _buildCircularScore(opportunity.score, scoreColor),
+              ],
             ),
           ),
         ),
@@ -378,39 +347,39 @@ class _OpportunitiesPageState extends State<OpportunitiesPage>
     return Column(
       children: [
         SizedBox(
-          width: 50,
-          height: 50,
+          width: 48,
+          height: 48,
           child: Stack(
             children: [
               Center(
                 child: SizedBox(
-                  width: 50,
-                  height: 50,
+                  width: 48,
+                  height: 48,
                   child: CircularProgressIndicator(
                     value: 1.0,
-                    color: Colors.white.withValues(alpha: 0.1),
-                    strokeWidth: 4,
+                    color: Colors.white10,
+                    strokeWidth: 2,
                   ),
                 ),
               ),
               Center(
                 child: SizedBox(
-                  width: 50,
-                  height: 50,
+                  width: 48,
+                  height: 48,
                   child: CircularProgressIndicator(
                     value: score,
-                    color: color,
-                    strokeWidth: 4,
-                    strokeCap: StrokeCap.round,
+                    color: const Color(0xFFD71921),
+                    strokeWidth: 2,
+                    strokeCap: StrokeCap.square,
                   ),
                 ),
               ),
               Center(
                 child: Text(
                   '${(score * 100).toInt()}',
-                  style: const TextStyle(
+                  style: GoogleFonts.robotoMono(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -418,13 +387,14 @@ class _OpportunitiesPageState extends State<OpportunitiesPage>
             ],
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
           'MATCH',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.4),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
+          style: GoogleFonts.inter(
+            color: Colors.white38,
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.0,
           ),
         ),
       ],

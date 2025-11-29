@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/pii_redactor.dart';
 
 class PIITesterPage extends StatefulWidget {
@@ -108,16 +109,33 @@ class _PIITesterPageState extends State<PIITesterPage> {
     super.dispose();
   }
 
+  // ... (imports remain the same)
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Local PII Redactor"),
+        title: Text(
+          'LOCAL PII REDACTOR',
+          style: GoogleFonts.robotoMono(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            letterSpacing: 1.0,
+          ),
+        ),
+        backgroundColor: Colors.black,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.white24, height: 1),
+        ),
         actions: [
           if (!_isLoading && _output.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.copy),
-              tooltip: "Copy redacted text",
+              icon: const Icon(Icons.copy, color: Colors.white),
+              tooltip: "COPY REDACTED TEXT",
               onPressed: _copyToClipboard,
             ),
         ],
@@ -127,19 +145,27 @@ class _PIITesterPageState extends State<PIITesterPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(),
+                  const CircularProgressIndicator(color: Color(0xFFD71921)),
                   const SizedBox(height: 20),
                   Text(
-                    _modelStatus,
-                    style: const TextStyle(fontSize: 16),
+                    _modelStatus.toUpperCase(),
+                    style: GoogleFonts.robotoMono(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 40),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 32),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
-                      "Downloading Qwen 2.5 (0.5B) model...\nThis may take a few minutes on first launch.",
-                      style: TextStyle(color: Colors.grey),
+                      "DOWNLOADING QWEN 2.5 (0.5B) MODEL...\nTHIS MAY TAKE A FEW MINUTES ON FIRST LAUNCH.",
+                      style: GoogleFonts.inter(
+                        color: Colors.white54,
+                        fontSize: 12,
+                        letterSpacing: 0.5,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -147,57 +173,98 @@ class _PIITesterPageState extends State<PIITesterPage> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Sample Texts Section
-                  const Text(
-                    "Quick Samples:",
-                    style: TextStyle(
+                  Text(
+                    "QUICK SAMPLES",
+                    style: GoogleFonts.robotoMono(
+                      color: Colors.white54,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 12,
+                      letterSpacing: 1.0,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
+                    runSpacing: 8,
                     children: _sampleTexts.asMap().entries.map((entry) {
                       return ActionChip(
-                        label: Text("Sample ${entry.key + 1}"),
+                        label: Text(
+                          "SAMPLE ${entry.key + 1}",
+                          style: GoogleFonts.robotoMono(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        backgroundColor: const Color(0xFF111111),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: Colors.white24),
+                        ),
                         onPressed: () => _loadSampleText(entry.value),
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
 
                   // Input Section
-                  const Text(
-                    "Input Text:",
-                    style: TextStyle(
+                  Text(
+                    "INPUT TEXT",
+                    style: GoogleFonts.robotoMono(
+                      color: Colors.white54,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 12,
+                      letterSpacing: 1.0,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: _inputController,
                     maxLines: 6,
+                    style: GoogleFonts.robotoMono(
+                      color: Colors.white,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
                     decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Colors.white24),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Colors.white24),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFD71921)),
+                      ),
                       hintText:
-                          "Paste text with names, emails, phone numbers...",
+                          "PASTE TEXT WITH NAMES, EMAILS, PHONE NUMBERS...",
+                      hintStyle: GoogleFonts.robotoMono(
+                        color: Colors.white24,
+                        fontSize: 14,
+                      ),
                       filled: true,
-                      fillColor: Colors.grey[900],
+                      fillColor: const Color(0xFF111111),
+                      contentPadding: const EdgeInsets.all(20),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
                   // Redact Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: (_isLoading || _isProcessing || !_redactor.isModelLoaded)
+                      onPressed:
+                          (_isLoading ||
+                              _isProcessing ||
+                              !_redactor.isModelLoaded)
                           ? null
                           : _processRedaction,
                       icon: _isProcessing
@@ -206,87 +273,112 @@ class _PIITesterPageState extends State<PIITesterPage> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
-                          : const Icon(Icons.shield_outlined),
+                          : const Icon(
+                              Icons.shield_outlined,
+                              color: Colors.white,
+                            ),
                       label: Text(
                         _isProcessing
-                            ? "Processing..."
-                            : "Redact PII (Locally)",
+                            ? "PROCESSING..."
+                            : "REDACT PII (LOCALLY)",
+                        style: GoogleFonts.robotoMono(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          letterSpacing: 1.0,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.teal,
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        backgroundColor: const Color(0xFFD71921),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        disabledBackgroundColor: const Color(0xFF111111),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 30),
 
                   // Output Section
-                  const Text(
-                    "Redacted Output:",
-                    style: TextStyle(
+                  Text(
+                    "REDACTED OUTPUT",
+                    style: GoogleFonts.robotoMono(
+                      color: Colors.white54,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 12,
+                      letterSpacing: 1.0,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.grey[850],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white12),
                     ),
                     constraints: const BoxConstraints(minHeight: 150),
                     child: SelectableText(
-                      _output.isEmpty ? "Redacted text will appear here..." : _output,
-                      style: TextStyle(
-                        fontSize: 16,
-                        height: 1.5,
-                        color: _output.isEmpty ? Colors.grey[600] : Colors.white,
+                      _output.isEmpty
+                          ? "REDACTED TEXT WILL APPEAR HERE..."
+                          : _output,
+                      style: GoogleFonts.robotoMono(
+                        fontSize: 14,
+                        height: 1.6,
+                        color: _output.isEmpty ? Colors.white24 : Colors.white,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 30),
 
                   // Info Section
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.blue[900]?.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                      color: const Color(0xFF111111),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white12),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.info_outline, color: Colors.blue[300]),
-                            const SizedBox(width: 8),
-                            const Text(
-                              "How it works:",
-                              style: TextStyle(
+                            const Icon(
+                              Icons.info_outline,
+                              color: Colors.white54,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              "HOW IT WORKS",
+                              style: GoogleFonts.robotoMono(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: 12,
+                                color: Colors.white,
+                                letterSpacing: 1.0,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Text(
-                          "• Regex Pass: Instantly catches emails, phones, SSNs, credit cards\n"
-                          "• LLM Pass: Uses Qwen 2.5 (0.5B) to detect names, locations, organizations\n"
-                          "• 100% Local: No data leaves your device\n"
-                          "• Model: Qwen 2.5 (0.5B) - optimized for mobile",
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[300],
-                            height: 1.5,
+                          "• REGEX PASS: INSTANTLY CATCHES EMAILS, PHONES, SSNS, CREDIT CARDS\n"
+                          "• LLM PASS: USES QWEN 2.5 (0.5B) TO DETECT NAMES, LOCATIONS, ORGANIZATIONS\n"
+                          "• 100% LOCAL: NO DATA LEAVES YOUR DEVICE\n"
+                          "• MODEL: QWEN 2.5 (0.5B) - OPTIMIZED FOR MOBILE",
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.white54,
+                            height: 1.6,
                           ),
                         ),
                       ],

@@ -1,7 +1,7 @@
 import 'package:cactus/cactus.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
-import 'medical_redaction_service.dart';
+import 'cactus_model_service.dart';
 
 class Opportunity {
   final String id;
@@ -160,17 +160,19 @@ class OpportunitiesService {
     }
   }
 
-  final MedicalRedactionService _redactor = MedicalRedactionService();
-
-  /// Generate embeddings using the shared CactusLM model via MedicalRedactionService
+  /// Generate embeddings using the shared CactusLM model
   Future<List<double>> _generateEmbeddings(String text) async {
     try {
       // Ensure model is ready
-      if (!_redactor.llmReady) {
-        await _redactor.initializeLLM();
+      if (!CactusModelService.instance.isLoaded) {
+        await CactusModelService.instance.initialize();
       }
 
-      final embedding = await _redactor.generateEmbedding(text);
+      final result = await CactusModelService.instance.model.generateEmbedding(
+        text: text,
+      );
+      if (!result.success) throw Exception("Embedding failed");
+      final embedding = result.embeddings;
 
       // L2 Normalize the embedding to ensure Euclidean distance works as expected for similarity
       double sumSq = 0.0;

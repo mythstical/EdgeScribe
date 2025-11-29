@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/conversation.dart';
@@ -8,6 +9,7 @@ import 'conversation_details_page.dart';
 
 import '../screens/api_key_setup_screen.dart';
 import '../services/transcription_service.dart';
+import '../services/soap_generation_service.dart';
 
 /// Home page displaying conversation list
 class ConversationsHomePage extends StatefulWidget {
@@ -33,8 +35,10 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
   void _openSettings() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) =>
-            ApiKeySetupScreen(leopardService: TranscriptionService()),
+        builder: (context) => ApiKeySetupScreen(
+          leopardService: TranscriptionService(),
+          soapService: SoapGenerationService(),
+        ),
       ),
     );
   }
@@ -58,27 +62,34 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
     }
   }
 
+  // ... (imports remain the same)
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF16213E),
+        backgroundColor: Colors.black,
         elevation: 0,
-        title: const Text(
-          'EdgeScribe',
-          style: TextStyle(
+        title: Text(
+          'EDGESCRIBE',
+          style: GoogleFonts.robotoMono(
             color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            letterSpacing: 2.0,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: Color(0xFF00D9FF)),
+            icon: const Icon(Icons.settings_outlined, color: Colors.white),
             onPressed: _openSettings,
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.white24, height: 1),
+        ),
       ),
       body: Consumer<ConversationProvider>(
         builder: (context, provider, child) {
@@ -87,7 +98,7 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             itemCount: provider.conversations.length,
             itemBuilder: (context, index) {
               final conversation = provider.conversations[index];
@@ -98,12 +109,18 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createNewConversation,
-        backgroundColor: const Color(0xFF00D9FF),
-        foregroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: const Color(0xFFD71921),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         icon: const Icon(Icons.add),
-        label: const Text(
-          'New Conversation',
-          style: TextStyle(fontWeight: FontWeight.w600),
+        label: Text(
+          'NEW CONVERSATION',
+          style: GoogleFonts.robotoMono(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            letterSpacing: 1.0,
+          ),
         ),
       ),
     );
@@ -115,46 +132,57 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 120,
-            height: 120,
+            width: 100,
+            height: 100,
             decoration: BoxDecoration(
-              color: const Color(0xFF16213E),
-              borderRadius: BorderRadius.circular(60),
+              color: const Color(0xFF111111),
+              borderRadius: BorderRadius.circular(50),
+              border: Border.all(color: Colors.white24, width: 1),
             ),
             child: const Icon(
               Icons.chat_bubble_outline,
-              size: 60,
-              color: Color(0xFF00D9FF),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No Conversations Yet',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Start a new conversation to begin recording',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 14,
+              size: 40,
+              color: Colors.white54,
             ),
           ),
           const SizedBox(height: 32),
+          Text(
+            'NO CONVERSATIONS',
+            style: GoogleFonts.robotoMono(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'START A NEW SESSION TO BEGIN',
+            style: GoogleFonts.inter(
+              color: Colors.white38,
+              fontSize: 10,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 40),
           ElevatedButton.icon(
             onPressed: _createNewConversation,
-            icon: const Icon(Icons.add),
-            label: const Text('New Conversation'),
+            icon: const Icon(Icons.add, size: 18),
+            label: Text(
+              'NEW CONVERSATION',
+              style: GoogleFonts.robotoMono(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                letterSpacing: 1.0,
+              ),
+            ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00D9FF),
-              foregroundColor: const Color(0xFF1A1A2E),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              backgroundColor: const Color(0xFFD71921),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(30),
               ),
             ),
           ),
@@ -173,26 +201,26 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
       key: Key(conversation.id),
       direction: DismissDirection.endToStart,
       background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFFD71921),
+          borderRadius: BorderRadius.circular(24),
         ),
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+        padding: const EdgeInsets.only(right: 24),
+        child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
       onDismissed: (_) => provider.deleteConversation(conversation.id),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF16213E),
-          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFF111111),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: conversation.isRecording
-                ? const Color(0xFF00D9FF)
-                : Colors.transparent,
-            width: 2,
+                ? const Color(0xFFD71921)
+                : Colors.white12,
+            width: 1,
           ),
         ),
         child: Material(
@@ -206,9 +234,9 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
                 ),
               );
             },
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(24),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -216,36 +244,42 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
                   Row(
                     children: [
                       Container(
-                        width: 48,
-                        height: 48,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00D9FF).withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white24),
                         ),
                         child: const Icon(
-                          Icons.person,
-                          color: Color(0xFF00D9FF),
+                          Icons.person_outline,
+                          color: Colors.white,
+                          size: 20,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              conversation.patientName,
-                              style: const TextStyle(
+                              conversation.patientName.toUpperCase(),
+                              style: GoogleFonts.robotoMono(
                                 color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.0,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              dateFormat.format(conversation.createdAt),
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 12,
+                              dateFormat
+                                  .format(conversation.createdAt)
+                                  .toUpperCase(),
+                              style: GoogleFonts.inter(
+                                color: Colors.white38,
+                                fontSize: 10,
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ],
@@ -258,27 +292,29 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.2),
+                            color: const Color(
+                              0xFFD71921,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.red),
+                            border: Border.all(color: const Color(0xFFD71921)),
                           ),
                           child: Row(
                             children: [
                               Container(
-                                width: 8,
-                                height: 8,
+                                width: 6,
+                                height: 6,
                                 decoration: const BoxDecoration(
-                                  color: Colors.red,
+                                  color: Color(0xFFD71921),
                                   shape: BoxShape.circle,
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Text(
-                                'RECORDING',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                              Text(
+                                'REC',
+                                style: GoogleFonts.robotoMono(
+                                  color: const Color(0xFFD71921),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
@@ -287,33 +323,37 @@ class _ConversationsHomePageState extends State<ConversationsHomePage> {
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // Context
                   Text(
-                    conversation.context,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 14,
+                    conversation.context.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      color: Colors.white54,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
 
                   // Transcription Preview
                   if (conversation.transcription.isNotEmpty) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A2E),
-                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white10),
                       ),
                       child: Text(
                         conversation.transcription,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 13,
+                        style: GoogleFonts.robotoMono(
+                          color: Colors.white54,
+                          fontSize: 12,
+                          height: 1.5,
                         ),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,

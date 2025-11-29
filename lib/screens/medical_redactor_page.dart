@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/medical_redactor_service.dart';
 
 class MedicalRedactorPage extends StatefulWidget {
@@ -19,7 +20,8 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
   bool _showCloudSimulation = false;
 
   // Sample medical transcript for testing
-  final String _sampleTranscript = '''Patient John Mitchell presented to St. Luke's Hospital with acute abdominal pain on 12/15/2024. Dr. Sarah Chen performed the initial examination. The patient reported his phone number as 555-123-4567 and email john.mitchell@email.com. Dr. Chen consulted with Dr. Robert Anderson from Mayo Clinic regarding the case. Patient's SSN on file is 123-45-6789. Recommended transfer to Boston General Hospital for specialist care.''';
+  final String _sampleTranscript =
+      '''Patient John Mitchell presented to St. Luke's Hospital with acute abdominal pain on 12/15/2024. Dr. Sarah Chen performed the initial examination. The patient reported his phone number as 555-123-4567 and email john.mitchell@email.com. Dr. Chen consulted with Dr. Robert Anderson from Mayo Clinic regarding the case. Patient's SSN on file is 123-45-6789. Recommended transfer to Boston General Hospital for specialist care.''';
 
   @override
   void initState() {
@@ -32,7 +34,9 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
       await _redactor.initialize(
         onProgress: (progress, status, isError) {
           if (mounted) {
-            final pct = progress != null ? (progress * 100).toStringAsFixed(1) : '';
+            final pct = progress != null
+                ? (progress * 100).toStringAsFixed(1)
+                : '';
             setState(() {
               _modelStatus = "$status $pct%";
             });
@@ -123,22 +127,39 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
     super.dispose();
   }
 
+  // ... (imports remain the same)
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Medical Redactor (SmolLM2-360M)"),
+        title: Text(
+          'MEDICAL REDACTOR (SMOLLM2-360M)',
+          style: GoogleFonts.robotoMono(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            letterSpacing: 1.0,
+          ),
+        ),
+        backgroundColor: Colors.black,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.white24, height: 1),
+        ),
         actions: [
           if (!_isLoading && _result != null)
             IconButton(
-              icon: const Icon(Icons.copy),
-              tooltip: "Copy redacted text",
+              icon: const Icon(Icons.copy, color: Colors.white),
+              tooltip: "COPY REDACTED TEXT",
               onPressed: _copyRedactedText,
             ),
           if (!_isLoading && _result != null)
             IconButton(
-              icon: const Icon(Icons.cloud_upload),
-              tooltip: "Simulate cloud upload",
+              icon: const Icon(Icons.cloud_upload, color: Colors.white),
+              tooltip: "SIMULATE CLOUD UPLOAD",
               onPressed: _simulateCloudUpload,
             ),
         ],
@@ -146,24 +167,24 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
       body: _isLoading
           ? _buildLoadingView()
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildQuickActions(),
                   const SizedBox(height: 20),
                   _buildInputSection(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   _buildRedactButton(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 30),
                   if (_result != null) ...[
                     _buildOutputSection(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _buildEntitiesSection(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                   ],
                   if (_showCloudSimulation) _buildCloudSimulation(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   _buildInfoSection(),
                 ],
               ),
@@ -176,19 +197,27 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(),
+          const CircularProgressIndicator(color: Color(0xFFD71921)),
           const SizedBox(height: 20),
           Text(
-            _modelStatus,
-            style: const TextStyle(fontSize: 16),
+            _modelStatus.toUpperCase(),
+            style: GoogleFonts.robotoMono(
+              fontSize: 16,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 40),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
-              "Downloading smollm2-360m (227MB) with fallback to gemma3-270m if needed.\nThis may take a few minutes on first launch.",
-              style: TextStyle(color: Colors.grey),
+              "DOWNLOADING SMOLLM2-360M (227MB) WITH FALLBACK TO GEMMA3-270M IF NEEDED.\nTHIS MAY TAKE A FEW MINUTES ON FIRST LAUNCH.",
+              style: GoogleFonts.inter(
+                color: Colors.white54,
+                fontSize: 12,
+                letterSpacing: 0.5,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -203,10 +232,23 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
         Expanded(
           child: ElevatedButton.icon(
             onPressed: _loadSampleText,
-            icon: const Icon(Icons.description),
-            label: const Text("Load Sample Transcript"),
+            icon: const Icon(Icons.description, color: Colors.white),
+            label: Text(
+              "LOAD SAMPLE TRANSCRIPT",
+              style: GoogleFonts.robotoMono(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                letterSpacing: 1.0,
+              ),
+            ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[800],
+              backgroundColor: const Color(0xFF111111),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Colors.white24),
+              ),
             ),
           ),
         ),
@@ -218,19 +260,45 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Input Medical Transcript:",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        Text(
+          "INPUT MEDICAL TRANSCRIPT",
+          style: GoogleFonts.robotoMono(
+            color: Colors.white54,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            letterSpacing: 1.0,
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         TextField(
           controller: _inputController,
           maxLines: 8,
+          style: GoogleFonts.robotoMono(
+            color: Colors.white,
+            fontSize: 14,
+            height: 1.5,
+          ),
           decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            hintText: "Paste medical transcript with PII...",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.white24),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.white24),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFD71921)),
+            ),
+            hintText: "PASTE MEDICAL TRANSCRIPT WITH PII...",
+            hintStyle: GoogleFonts.robotoMono(
+              color: Colors.white24,
+              fontSize: 14,
+            ),
             filled: true,
-            fillColor: Colors.grey[900],
+            fillColor: const Color(0xFF111111),
+            contentPadding: const EdgeInsets.all(20),
           ),
         ),
       ],
@@ -251,11 +319,24 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : const Icon(Icons.shield),
-        label: Text(_isProcessing ? "Processing..." : "Redact PII (Hybrid)"),
+            : const Icon(Icons.shield, color: Colors.white),
+        label: Text(
+          _isProcessing ? "PROCESSING..." : "REDACT PII (HYBRID)",
+          style: GoogleFonts.robotoMono(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            letterSpacing: 1.0,
+          ),
+        ),
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          backgroundColor: Colors.teal,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          backgroundColor: const Color(0xFFD71921),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          disabledBackgroundColor: const Color(0xFF111111),
         ),
       ),
     );
@@ -267,26 +348,46 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
       children: [
         Row(
           children: [
-            const Text(
-              "Redacted Output:",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Text(
+              "REDACTED OUTPUT",
+              style: GoogleFonts.robotoMono(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                letterSpacing: 1.0,
+              ),
             ),
             const Spacer(),
             if (_result!.hasRedactions)
-              Chip(
-                label: Text("${_result!.totalRedactions} PII detected"),
-                backgroundColor: Colors.orange[900],
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD71921).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFD71921)),
+                ),
+                child: Text(
+                  "${_result!.totalRedactions} PII DETECTED",
+                  style: GoogleFonts.robotoMono(
+                    color: const Color(0xFFD71921),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.grey[850],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white12),
           ),
           child: _buildHighlightedText(),
         ),
@@ -306,84 +407,111 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
     for (var match in matches) {
       // Add text before tag
       if (match.start > currentPos) {
-        spans.add(TextSpan(
-          text: text.substring(currentPos, match.start),
-          style: const TextStyle(color: Colors.white),
-        ));
+        spans.add(
+          TextSpan(
+            text: text.substring(currentPos, match.start),
+            style: GoogleFonts.robotoMono(color: Colors.white),
+          ),
+        );
       }
 
       // Add highlighted tag
-      spans.add(TextSpan(
-        text: match.group(0),
-        style: TextStyle(
-          color: Colors.green[300],
-          fontWeight: FontWeight.bold,
-          backgroundColor: Colors.green[900]?.withValues(alpha: 0.3),
+      spans.add(
+        TextSpan(
+          text: match.group(0),
+          style: GoogleFonts.robotoMono(
+            color: const Color(0xFFD71921),
+            fontWeight: FontWeight.bold,
+            backgroundColor: const Color(0xFFD71921).withValues(alpha: 0.1),
+          ),
         ),
-      ));
+      );
 
       currentPos = match.end;
     }
 
     // Add remaining text
     if (currentPos < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(currentPos),
-        style: const TextStyle(color: Colors.white),
-      ));
+      spans.add(
+        TextSpan(
+          text: text.substring(currentPos),
+          style: GoogleFonts.robotoMono(color: Colors.white),
+        ),
+      );
     }
 
     return SelectableText.rich(
       TextSpan(children: spans),
-      style: const TextStyle(fontSize: 16, height: 1.5),
+      style: GoogleFonts.robotoMono(fontSize: 14, height: 1.6),
     );
   }
 
   Widget _buildEntitiesSection() {
     final counts = {
-      'Rules': _result!.rulesApplied,
+      'RULES': _result!.rulesApplied,
       'LLM': _result!.llmEntitiesFound,
-      'Blocked': _result!.hallucinationsBlocked,
+      'BLOCKED': _result!.hallucinationsBlocked,
     };
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Detection Summary:",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        Text(
+          "DETECTION SUMMARY",
+          style: GoogleFonts.robotoMono(
+            color: Colors.white54,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            letterSpacing: 1.0,
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.grey[900],
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFF111111),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white24),
           ),
           child: Column(
             children: [
               ...counts.entries.map((entry) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Row(
                     children: [
                       Icon(
                         _getIconForLabel(entry.key),
-                        color: Colors.green[300],
-                        size: 20,
+                        color: Colors.white,
+                        size: 16,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 12),
                       Text(
                         entry.key,
-                        style: TextStyle(
-                          color: Colors.green[300],
+                        style: GoogleFonts.robotoMono(
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
                       const Spacer(),
-                      Chip(
-                        label: Text("${entry.value}"),
-                        backgroundColor: Colors.green[900],
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          "${entry.value}",
+                          style: GoogleFonts.robotoMono(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -399,53 +527,62 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
   IconData _getIconForLabel(String label) {
     switch (label) {
       case 'EMAIL':
-        return Icons.email;
+        return Icons.email_outlined;
       case 'PHONE':
-        return Icons.phone;
+        return Icons.phone_outlined;
       case 'SSN':
-        return Icons.badge;
+        return Icons.badge_outlined;
       case 'DATE':
-        return Icons.calendar_today;
+        return Icons.calendar_today_outlined;
       case 'PATIENT':
-        return Icons.person;
+        return Icons.person_outlined;
       case 'DR':
       case 'DOCTOR':
-        return Icons.local_hospital;
+        return Icons.local_hospital_outlined;
       case 'HOSPITAL':
       case 'FACILITY':
-        return Icons.business;
+        return Icons.business_outlined;
       default:
-        return Icons.label;
+        return Icons.label_outline;
     }
   }
 
   Widget _buildCloudSimulation() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.blue[900]?.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue),
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF00D9FF)),
       ),
       child: Column(
         children: [
-          const Row(
+          Row(
             children: [
-              CircularProgressIndicator(strokeWidth: 2),
-              SizedBox(width: 16),
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF00D9FF),
+                ),
+              ),
+              const SizedBox(width: 16),
               Text(
-                "Uploading to Cloud...",
-                style: TextStyle(
+                "UPLOADING TO CLOUD...",
+                style: GoogleFonts.robotoMono(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 14,
+                  color: const Color(0xFF00D9FF),
+                  letterSpacing: 1.0,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            "Sending redacted text:\n\"${_result!.redacted.substring(0, 50)}...\"",
-            style: TextStyle(color: Colors.grey[400], fontSize: 12),
+            "SENDING REDACTED TEXT:\n\"${_result!.redacted.substring(0, 50)}...\"",
+            style: GoogleFonts.robotoMono(color: Colors.white54, fontSize: 10),
           ),
         ],
       ),
@@ -454,36 +591,41 @@ class _MedicalRedactorPageState extends State<MedicalRedactorPage> {
 
   Widget _buildInfoSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.blue[900]?.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, color: Colors.blue[300]),
-              const SizedBox(width: 8),
-              const Text(
-                "Hybrid Redaction Pipeline:",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              const Icon(Icons.info_outline, color: Colors.white54, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                "HYBRID REDACTION PIPELINE",
+                style: GoogleFonts.robotoMono(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.white,
+                  letterSpacing: 1.0,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
-            "• Pass 1 (Regex): Instant detection of Email, Phone, SSN, Dates\n"
-            "• Pass 2 (LLM): SmolLM2-360M detects Patient names, Doctors, Facilities\n"
-            "• 100% Local: No data leaves your device\n"
-            "• Structured Output: RedactionResult with entity metadata\n"
-            "• Model: SmolLM2-360M-Instruct (227MB)",
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[300],
-              height: 1.5,
+            "• PASS 1 (REGEX): INSTANT DETECTION OF EMAIL, PHONE, SSN, DATES\n"
+            "• PASS 2 (LLM): SMOLLM2-360M DETECTS PATIENT NAMES, DOCTORS, FACILITIES\n"
+            "• 100% LOCAL: NO DATA LEAVES YOUR DEVICE\n"
+            "• STRUCTURED OUTPUT: REDACTIONRESULT WITH ENTITY METADATA\n"
+            "• MODEL: SMOLLM2-360M-INSTRUCT (227MB)",
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: Colors.white54,
+              height: 1.6,
             ),
           ),
         ],

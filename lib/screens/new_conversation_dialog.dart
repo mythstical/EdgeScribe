@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/conversation_provider.dart';
 
 /// Form dialog for creating a new conversation
@@ -36,11 +37,16 @@ class _NewConversationDialogState extends State<NewConversationDialog> {
     }
   }
 
+  // ... (imports remain the same)
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF16213E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: Colors.black,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: const BorderSide(color: Colors.white24),
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -56,31 +62,37 @@ class _NewConversationDialogState extends State<NewConversationDialog> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00D9FF).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      color: const Color(0xFFD71921).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFD71921)),
                     ),
                     child: const Icon(
-                      Icons.person_add,
-                      color: Color(0xFF00D9FF),
+                      Icons.person_add_outlined,
+                      color: Color(0xFFD71921),
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'New Conversation',
-                          style: TextStyle(
+                          'NEW CONVERSATION',
+                          style: GoogleFonts.robotoMono(
                             color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.0,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          'Enter patient details',
-                          style: TextStyle(color: Colors.white54, fontSize: 14),
+                          'ENTER PATIENT DETAILS',
+                          style: GoogleFonts.inter(
+                            color: Colors.white54,
+                            fontSize: 12,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ],
                     ),
@@ -88,33 +100,46 @@ class _NewConversationDialogState extends State<NewConversationDialog> {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 30),
 
               // Patient Name Field
-              const Text(
-                'Patient Name',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+              Text(
+                'PATIENT NAME',
+                style: GoogleFonts.robotoMono(
+                  color: Colors.white54,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _patientNameController,
-                style: const TextStyle(color: Colors.white),
+                style: GoogleFonts.robotoMono(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
                 decoration: InputDecoration(
-                  hintText: 'e.g., John Smith',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
+                  hintText: 'E.G., JOHN SMITH',
+                  hintStyle: GoogleFonts.robotoMono(
+                    color: Colors.white24,
+                    fontSize: 14,
                   ),
                   filled: true,
-                  fillColor: const Color(0xFF1A1A2E),
+                  fillColor: const Color(0xFF111111),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Colors.white24),
                   ),
-                  contentPadding: const EdgeInsets.all(16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Colors.white24),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFD71921)),
+                  ),
+                  contentPadding: const EdgeInsets.all(20),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -124,35 +149,48 @@ class _NewConversationDialogState extends State<NewConversationDialog> {
                 },
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               // Context Field
-              const Text(
-                'Meeting Context',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+              Text(
+                'MEETING CONTEXT',
+                style: GoogleFonts.robotoMono(
+                  color: Colors.white54,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _contextController,
                 maxLines: 3,
-                style: const TextStyle(color: Colors.white),
+                style: GoogleFonts.robotoMono(
+                  color: Colors.white,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
                 decoration: InputDecoration(
-                  hintText:
-                      'e.g., Initial consultation, Follow-up visit, Lab results review...',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
+                  hintText: 'E.G., INITIAL CONSULTATION, FOLLOW-UP VISIT...',
+                  hintStyle: GoogleFonts.robotoMono(
+                    color: Colors.white24,
+                    fontSize: 14,
                   ),
                   filled: true,
-                  fillColor: const Color(0xFF1A1A2E),
+                  fillColor: const Color(0xFF111111),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Colors.white24),
                   ),
-                  contentPadding: const EdgeInsets.all(16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Colors.white24),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFD71921)),
+                  ),
+                  contentPadding: const EdgeInsets.all(20),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -162,7 +200,7 @@ class _NewConversationDialogState extends State<NewConversationDialog> {
                 },
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 30),
 
               // Action Buttons
               Row(
@@ -171,35 +209,43 @@ class _NewConversationDialogState extends State<NewConversationDialog> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.2),
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        side: const BorderSide(color: Colors.white24),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
+                        foregroundColor: Colors.white,
                       ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(color: Colors.white70),
+                      child: Text(
+                        'CANCEL',
+                        style: GoogleFonts.robotoMono(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          letterSpacing: 1.0,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _createConversation,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFF00D9FF),
-                        foregroundColor: const Color(0xFF1A1A2E),
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        backgroundColor: const Color(0xFFD71921),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        'Create',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                      child: Text(
+                        'CREATE',
+                        style: GoogleFonts.robotoMono(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          letterSpacing: 1.0,
+                        ),
                       ),
                     ),
                   ),

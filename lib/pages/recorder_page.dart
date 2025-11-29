@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -6,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/conversation.dart';
 import '../providers/conversation_provider.dart';
 import '../services/transcription_service.dart';
+import '../services/soap_generation_service.dart';
 import '../screens/api_key_setup_screen.dart';
 
 /// Recorder page for a specific conversation
@@ -181,8 +183,10 @@ class _RecorderPageState extends State<RecorderPage> {
   Future<void> _showApiKeySetup() async {
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (context) =>
-            ApiKeySetupScreen(leopardService: _transcriptionService),
+        builder: (context) => ApiKeySetupScreen(
+          leopardService: _transcriptionService,
+          soapService: SoapGenerationService(),
+        ),
         fullscreenDialog: true,
       ),
     );
@@ -244,17 +248,21 @@ class _RecorderPageState extends State<RecorderPage> {
       setState(() => _status = "Playing recording...");
     } catch (e) {
       print("Playback error: $e");
-      setState(() => _status = "Playback error: ${e.toString().split('\n').first}");
+      setState(
+        () => _status = "Playback error: ${e.toString().split('\n').first}",
+      );
     }
   }
+
+  // ... (imports remain the same)
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: Colors.black,
       appBar: widget.showAppBar
           ? AppBar(
-              backgroundColor: const Color(0xFF16213E),
+              backgroundColor: Colors.black,
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -264,38 +272,47 @@ class _RecorderPageState extends State<RecorderPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.conversation.patientName,
-                    style: const TextStyle(
+                    widget.conversation.patientName.toUpperCase(),
+                    style: GoogleFonts.robotoMono(
                       color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 1.0,
                     ),
                   ),
                   Text(
-                    widget.conversation.context,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 12,
+                    widget.conversation.context.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      color: Colors.white54,
+                      fontSize: 10,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ],
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.settings, color: Color(0xFF00D9FF)),
-                  tooltip: 'Configure API Key',
+                  icon: const Icon(
+                    Icons.settings_outlined,
+                    color: Colors.white,
+                  ),
+                  tooltip: 'CONFIGURE API',
                   onPressed: _showApiKeySetup,
                 ),
                 if (!_isRecording && !_isTranscribing)
                   IconButton(
                     icon: const Icon(
-                      Icons.play_arrow,
-                      color: Color(0xFF00D9FF),
+                      Icons.play_arrow_outlined,
+                      color: Colors.white,
                     ),
-                    tooltip: 'Play Last Recording',
+                    tooltip: 'PLAY LAST',
                     onPressed: _playLastRecording,
                   ),
               ],
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(color: Colors.white24, height: 1),
+              ),
             )
           : null,
       body: Column(
@@ -303,21 +320,17 @@ class _RecorderPageState extends State<RecorderPage> {
           // Status Bar
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
             decoration: BoxDecoration(
               color: _isRecording
-                  ? Colors.red.withValues(alpha: 0.1)
-                  : _isTranscribing
-                  ? const Color(0xFF00D9FF).withValues(alpha: 0.1)
-                  : const Color(0xFF16213E),
+                  ? const Color(0xFFD71921).withValues(alpha: 0.1)
+                  : Colors.black,
               border: Border(
                 bottom: BorderSide(
                   color: _isRecording
-                      ? Colors.red
-                      : _isTranscribing
-                      ? const Color(0xFF00D9FF)
-                      : Colors.transparent,
-                  width: 2,
+                      ? const Color(0xFFD71921)
+                      : Colors.white24,
+                  width: 1,
                 ),
               ),
             ),
@@ -325,34 +338,35 @@ class _RecorderPageState extends State<RecorderPage> {
               children: [
                 if (_isRecording)
                   Container(
-                    width: 12,
-                    height: 12,
-                    margin: const EdgeInsets.only(right: 8),
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.only(right: 12),
                     decoration: const BoxDecoration(
-                      color: Colors.red,
+                      color: Color(0xFFD71921),
                       shape: BoxShape.circle,
                     ),
                   ),
                 Expanded(
                   child: Text(
-                    _status,
-                    style: TextStyle(
+                    _status.toUpperCase(),
+                    style: GoogleFonts.robotoMono(
                       color: _isRecording
-                          ? Colors.red[300]
-                          : _isTranscribing
-                          ? const Color(0xFF00D9FF)
+                          ? const Color(0xFFD71921)
                           : Colors.white,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 1.0,
                     ),
                   ),
                 ),
                 if (!widget.showAppBar && !_isRecording && !_isTranscribing)
                   IconButton(
                     icon: const Icon(
-                      Icons.play_arrow,
-                      color: Color(0xFF00D9FF),
+                      Icons.play_arrow_outlined,
+                      color: Colors.white,
+                      size: 20,
                     ),
-                    tooltip: 'Play Last Recording',
+                    tooltip: 'PLAY LAST',
                     onPressed: _playLastRecording,
                   ),
                 if (!_isRecording &&
@@ -364,9 +378,11 @@ class _RecorderPageState extends State<RecorderPage> {
                         TextButton(
                           onPressed: _toggleEdit,
                           child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
+                            'CANCEL',
+                            style: GoogleFonts.robotoMono(
+                              color: Colors.white54,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
@@ -374,21 +390,35 @@ class _RecorderPageState extends State<RecorderPage> {
                         ElevatedButton(
                           onPressed: _saveEdits,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00D9FF),
-                            foregroundColor: const Color(0xFF1A1A2E),
+                            backgroundColor: const Color(0xFFD71921),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,
                             ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                           ),
-                          child: const Text('Save'),
+                          child: Text(
+                            'SAVE',
+                            style: GoogleFonts.robotoMono(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                       ],
                     )
                   else
                     IconButton(
-                      icon: const Icon(Icons.edit, color: Color(0xFF00D9FF)),
-                      tooltip: 'Edit Transcript',
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      tooltip: 'EDIT TRANSCRIPT',
                       onPressed: _toggleEdit,
                     ),
               ],
@@ -399,7 +429,7 @@ class _RecorderPageState extends State<RecorderPage> {
           Expanded(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: SingleChildScrollView(
                 child: widget.conversation.transcription.isEmpty && !_isEditing
                     ? Center(
@@ -407,54 +437,66 @@ class _RecorderPageState extends State<RecorderPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const SizedBox(height: 60),
-                            Icon(
-                              Icons.mic_none,
-                              size: 80,
-                              color: Colors.white.withValues(alpha: 0.2),
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF111111),
+                                borderRadius: BorderRadius.circular(40),
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: const Icon(
+                                Icons.mic_none_outlined,
+                                size: 32,
+                                color: Colors.white54,
+                              ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 24),
                             Text(
-                              'Tap the button to start recording',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 16,
+                              'READY TO RECORD',
+                              style: GoogleFonts.robotoMono(
+                                color: Colors.white54,
+                                fontSize: 12,
+                                letterSpacing: 1.5,
                               ),
                             ),
                           ],
                         ),
                       )
                     : Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF16213E),
-                          borderRadius: BorderRadius.circular(12),
-                          border: _isEditing
-                              ? Border.all(
-                                  color: const Color(
-                                    0xFF00D9FF,
-                                  ).withValues(alpha: 0.5),
-                                )
-                              : null,
+                          color: const Color(0xFF111111),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: _isEditing
+                                ? const Color(0xFFD71921)
+                                : Colors.white12,
+                            width: 1,
+                          ),
                         ),
                         child: _isEditing
                             ? TextField(
                                 controller: _textController,
                                 maxLines: null,
-                                style: const TextStyle(
-                                  fontSize: 16,
+                                style: GoogleFonts.robotoMono(
+                                  fontSize: 14,
                                   height: 1.6,
                                   color: Colors.white,
                                 ),
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   border: InputBorder.none,
-                                  hintText: 'Enter transcription...',
-                                  hintStyle: TextStyle(color: Colors.white54),
+                                  hintText: 'ENTER TRANSCRIPTION...',
+                                  hintStyle: GoogleFonts.robotoMono(
+                                    color: Colors.white24,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               )
-                            : Text(
+                            : SelectableText(
                                 widget.conversation.transcription,
-                                style: const TextStyle(
-                                  fontSize: 16,
+                                style: GoogleFonts.robotoMono(
+                                  fontSize: 14,
                                   height: 1.6,
                                   color: Colors.white,
                                 ),
@@ -467,20 +509,17 @@ class _RecorderPageState extends State<RecorderPage> {
       ),
       floatingActionButton: _isModelReady && !_isEditing
           ? SizedBox(
-              width: 72,
-              height: 72,
+              width: 80,
+              height: 80,
               child: FloatingActionButton(
                 onPressed: _isTranscribing ? null : _toggleRecording,
                 backgroundColor: _isRecording
-                    ? Colors.red
-                    : const Color(0xFF00D9FF),
+                    ? const Color(0xFFD71921)
+                    : Colors.white,
+                foregroundColor: _isRecording ? Colors.white : Colors.black,
                 shape: const CircleBorder(),
-                elevation: 8,
-                child: Icon(
-                  _isRecording ? Icons.stop : Icons.mic,
-                  size: 32,
-                  color: _isRecording ? Colors.white : const Color(0xFF1A1A2E),
-                ),
+                elevation: 0,
+                child: Icon(_isRecording ? Icons.stop : Icons.mic, size: 32),
               ),
             )
           : null,
