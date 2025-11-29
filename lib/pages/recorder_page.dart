@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/conversation.dart';
 import '../providers/conversation_provider.dart';
 import '../services/transcription_service.dart';
@@ -119,8 +121,16 @@ class _RecorderPageState extends State<RecorderPage> {
         });
       }
     } else {
-      // Start recording
+      // Start recording - request permission first
       try {
+        // Request microphone permission
+        final micStatus = await Permission.microphone.request();
+
+        if (!micStatus.isGranted) {
+          setState(() => _status = "Microphone permission denied");
+          return;
+        }
+
         await _transcriptionService.startRecording();
 
         widget.conversation.isRecording = true;
@@ -202,14 +212,39 @@ class _RecorderPageState extends State<RecorderPage> {
   Future<void> _playLastRecording() async {
     final path = await _transcriptionService.getLastRecordingPath();
 
-    if (path != null) {
-      try {
-        await _audioPlayer.play(DeviceFileSource(path));
-      } catch (e) {
-        setState(() => _status = "Playback error: $e");
-      }
-    } else {
+    if (path == null) {
       setState(() => _status = "No recording found");
+      return;
+    }
+
+    try {
+      // Verify file exists and has content
+      final file = File(path);
+      if (!await file.exists()) {
+        setState(() => _status = "Recording file not found");
+        return;
+      }
+
+      final fileSize = await file.length();
+      if (fileSize == 0) {
+        setState(() => _status = "Recording file is empty");
+        return;
+      }
+
+      print("Playing file: $path (size: $fileSize bytes)");
+
+      // Stop any existing playback and reset player state
+      await _audioPlayer.stop();
+      await _audioPlayer.release();
+
+      // Set source and play using file:// URL scheme
+      await _audioPlayer.setSourceUrl('file://$path');
+      await _audioPlayer.resume();
+
+      setState(() => _status = "Playing recording...");
+    } catch (e) {
+      print("Playback error: $e");
+      setState(() => _status = "Playback error: ${e.toString().split('\n').first}");
     }
   }
 
