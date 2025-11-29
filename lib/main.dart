@@ -1,7 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'services/transcription_service.dart';
+import 'screens/api_key_setup_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,22 +12,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [Provider(create: (_) => TranscriptionService())],
-      child: MaterialApp(
-        title: 'EdgeScribe',
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          primarySwatch: Colors.teal,
-          useMaterial3: true,
-          scaffoldBackgroundColor: const Color(0xFF121212),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF1E1E1E),
-            elevation: 0,
-          ),
-        ),
-        home: const TranscriptionScreen(),
-      ),
+    return MaterialApp(
+      title: 'EdgeScribe',
+      theme: ThemeData.dark(),
+      home: const TranscriptionScreen(),
     );
   }
 }
@@ -46,6 +34,8 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
   bool _isTranscribing = false;
   bool _isModelReady = false;
 
+  final TranscriptionService _transcriptionService = TranscriptionService();
+
   @override
   void initState() {
     super.initState();
@@ -53,19 +43,27 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
   }
 
   Future<void> _initializeModel() async {
-    final service = Provider.of<TranscriptionService>(context, listen: false);
     try {
-      setState(() => _status = "Downloading model...");
-      await service.downloadModel(
-        onProgress: (progress, status) {
-          setState(() {
-            _status = "$status ${(progress * 100).toStringAsFixed(1)}%";
-          });
-        },
-      );
+      setState(() => _status = "Checking for API key...");
 
-      setState(() => _status = "Initializing model...");
-      await service.initializeModel();
+      // Check if Leopard API key exists, if not show setup screen
+      if (!await _transcriptionService.hasApiKey()) {
+        setState(() {
+          _status = "Setup required";
+          _isModelReady = true;
+        });
+
+        // Show API key setup dialog
+        if (mounted) {
+          await Future.delayed(const Duration(milliseconds: 500));
+          _showApiKeySetup();
+        }
+        return;
+      }
+
+      // Initialize Leopard
+      setState(() => _status = "Initializing Leopard...");
+      await _transcriptionService.initialize();
 
       setState(() {
         _isModelReady = true;
@@ -77,10 +75,13 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
   }
 
   Future<void> _toggleRecording() async {
-    final service = Provider.of<TranscriptionService>(context, listen: false);
+    if (!_transcriptionService.isInitialized) {
+      setState(() => _status = "Leopard not ready. Check API key.");
+      return;
+    }
 
     if (_isRecording) {
-      // Stop recording
+      // Stop recording and transcribe
       try {
         setState(() {
           _isRecording = false;
@@ -88,18 +89,13 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
           _status = "Transcribing...";
         });
 
-        final stream = await service.stopRecordingAndTranscribeStream();
-
-        await for (final token in stream) {
-          setState(() {
-            _transcribedText += token;
-          });
-        }
+        final transcription = await _transcriptionService
+            .stopRecordingAndTranscribe();
 
         setState(() {
           _isTranscribing = false;
           _status = "Ready to record";
-          _transcribedText += "\n\n"; // Add spacing for next recording
+          _transcribedText += "$transcription\n\n";
         });
       } catch (e) {
         setState(() {
@@ -110,17 +106,11 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
     } else {
       // Start recording
       try {
-        await service.startRecording(
-          onSilenceDetected: () {
-            // Automatically stop recording when silence is detected
-            if (mounted && _isRecording) {
-              _toggleRecording();
-            }
-          },
-        );
+        await _transcriptionService.startRecording();
+
         setState(() {
           _isRecording = true;
-          _status = "Recording... (Speak now)";
+          _status = "Recording...";
         });
       } catch (e) {
         setState(() => _status = "Error: $e");
@@ -130,15 +120,37 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
 
   final AudioPlayer _audioPlayer = AudioPlayer();
 
+  // Show API key setup screen
+  Future<void> _showApiKeySetup() async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) =>
+            ApiKeySetupScreen(leopardService: _transcriptionService),
+        fullscreenDialog: true,
+      ),
+    );
+
+    // If user saved key, reinitialize Leopard
+    if (result == true && mounted) {
+      setState(() => _status = "Initializing Leopard...");
+      try {
+        await _transcriptionService.initialize();
+        setState(() => _status = "Ready to record");
+      } catch (e) {
+        setState(() => _status = "Init failed: $e");
+      }
+    }
+  }
+
   @override
   void dispose() {
     _audioPlayer.dispose();
+    _transcriptionService.dispose();
     super.dispose();
   }
 
   Future<void> _playLastRecording() async {
-    final service = Provider.of<TranscriptionService>(context, listen: false);
-    final path = await service.getLastRecordingPath();
+    final path = await _transcriptionService.getLastRecordingPath();
 
     if (path != null) {
       try {
@@ -154,8 +166,10 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('EdgeScribe'),
+        backgroundColor: Colors.purple,
         actions: [
           if (!_isRecording && !_isTranscribing)
             IconButton(
@@ -170,33 +184,47 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
           // Status Bar
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             color: _isRecording
                 ? Colors.red.withValues(alpha: 0.1)
                 : _isTranscribing
-                ? Colors.blue.withValues(alpha: 0.1)
-                : Colors.transparent,
-            child: Text(
-              _status,
-              style: TextStyle(
-                color: _isRecording
-                    ? Colors.redAccent
-                    : _isTranscribing
-                    ? Colors.blueAccent
-                    : Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
+                ? Colors.purple.withValues(alpha: 0.1)
+                : Colors.grey[900],
+            child: Row(
+              children: [
+                if (_isRecording)
+                  Container(
+                    width: 12,
+                    height: 12,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                Expanded(
+                  child: Text(
+                    _status,
+                    style: TextStyle(
+                      color: _isRecording
+                          ? Colors.red[300]
+                          : _isTranscribing
+                          ? Colors.purple[300]
+                          : Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
-          // Transcription Area
+          // Transcription Display
           Expanded(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               child: SingleChildScrollView(
-                reverse: true, // Auto-scroll to bottom
                 child: Text(
                   _transcribedText.isEmpty
                       ? "Transcription will appear here..."
@@ -220,7 +248,7 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
               height: 72,
               child: FloatingActionButton(
                 onPressed: _isTranscribing ? null : _toggleRecording,
-                backgroundColor: _isRecording ? Colors.red : Colors.teal,
+                backgroundColor: _isRecording ? Colors.red : Colors.purple,
                 shape: const CircleBorder(),
                 child: Icon(
                   _isRecording ? Icons.stop : Icons.mic,
