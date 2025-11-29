@@ -27,7 +27,8 @@ class _RedactorPageState extends State<RedactorPage> {
   double? _llmProgress;
   RedactionResult? _result;
 
-  static const String _exampleText = '''Patient John Smith (SSN: 123-45-6789) visited Dr. Emily Watson at Mayo Clinic on January 15th, 2024.
+  static const String _exampleText =
+      '''Patient John Smith (SSN: 123-45-6789) visited Dr. Emily Watson at Mayo Clinic on January 15th, 2024.
 
 Contact: john.smith@email.com, Phone: (555) 123-4567
 
@@ -50,7 +51,10 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load dictionaries: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Failed to load dictionaries: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -81,13 +85,19 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('LLM ready - Layer 3 enabled'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('LLM ready - Layer 3 enabled'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('LLM init failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('LLM init failed: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -156,7 +166,7 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
                 'Loading Dictionaries...',
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -165,7 +175,7 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
                 'Preparing medical terms and city lists',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -181,10 +191,7 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
         elevation: 0,
         title: const Text(
           'Medical Redactor',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         actions: [
           // LLM Toggle
@@ -261,12 +268,16 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: (llmReady ? const Color(0xFF00D9FF) : const Color(0xFFFFB800)).withOpacity(0.2),
+              color:
+                  (llmReady ? const Color(0xFF00D9FF) : const Color(0xFFFFB800))
+                      .withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               llmReady ? Icons.shield : Icons.shield_outlined,
-              color: llmReady ? const Color(0xFF00D9FF) : const Color(0xFFFFB800),
+              color: llmReady
+                  ? const Color(0xFF00D9FF)
+                  : const Color(0xFFFFB800),
             ),
           ),
           const SizedBox(width: 16),
@@ -275,7 +286,9 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  llmReady ? 'Full Protection (3 Layers)' : 'Basic Protection (2 Layers)',
+                  llmReady
+                      ? 'Full Protection (3 Layers)'
+                      : 'Basic Protection (2 Layers)',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -288,7 +301,7 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
                       ? 'Regex + Dictionary + LLM'
                       : 'Regex + Dictionary only. Enable LLM for names/orgs.',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 12,
                   ),
                 ),
@@ -304,7 +317,7 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF16213E).withOpacity(0.5),
+        color: const Color(0xFF16213E).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white12),
       ),
@@ -316,10 +329,15 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : const Icon(Icons.download),
-            label: Text(_initializingLLM ? 'Initializing...' : 'Initialize LLM (Layer 3)'),
+            label: Text(
+              _initializingLLM ? 'Initializing...' : 'Initialize LLM (Layer 3)',
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00D9FF),
               foregroundColor: Colors.white,
@@ -330,7 +348,10 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
             const SizedBox(height: 12),
             Text(
               _llmStatus,
-              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 12,
+              ),
               textAlign: TextAlign.center,
             ),
             if (_llmProgress != null) ...[
@@ -370,7 +391,7 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
           ),
           decoration: InputDecoration(
             hintText: 'Enter medical text to redact...',
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
             filled: true,
             fillColor: const Color(0xFF16213E),
             border: OutlineInputBorder(
@@ -397,7 +418,10 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
           ? const SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1A1A2E)),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFF1A1A2E),
+              ),
             )
           : const Text(
               'REDACT PII',
@@ -430,9 +454,19 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildMetricChip('L1 Regex', '${metrics.layer1RegexMs}ms', result.layer1Count, const Color(0xFFFF6B6B)),
+              _buildMetricChip(
+                'L1 Regex',
+                '${metrics.layer1RegexMs}ms',
+                result.layer1Count,
+                const Color(0xFFFF6B6B),
+              ),
               const SizedBox(width: 8),
-              _buildMetricChip('L2 Dict', '${metrics.layer2DictMs}ms', result.layer2Count, const Color(0xFFFFB800)),
+              _buildMetricChip(
+                'L2 Dict',
+                '${metrics.layer2DictMs}ms',
+                result.layer2Count,
+                const Color(0xFFFFB800),
+              ),
               const SizedBox(width: 8),
               _buildMetricChip(
                 'L3 LLM',
@@ -448,12 +482,18 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
             children: [
               Text(
                 'Total: ${metrics.totalMs}ms',
-                style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 12,
+                ),
               ),
               if (result.hallucinationsBlocked > 0)
                 Text(
                   'Hallucinations blocked: ${result.hallucinationsBlocked}',
-                  style: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFFFF6B6B),
+                    fontSize: 12,
+                  ),
                 ),
             ],
           ),
@@ -467,24 +507,34 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
             Text(
               label,
-              style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               time,
-              style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 12,
+              ),
             ),
             Text(
               '$count found',
-              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 10,
+              ),
             ),
           ],
         ),
@@ -517,7 +567,10 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
               ),
               Text(
                 '${result.entities.length} entities',
-                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -547,33 +600,39 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
     for (final match in tagPattern.allMatches(text)) {
       // Add plain text before tag
       if (match.start > lastEnd) {
-        spans.add(TextSpan(
-          text: text.substring(lastEnd, match.start),
-          style: TextStyle(color: Colors.white.withOpacity(0.9)),
-        ));
+        spans.add(
+          TextSpan(
+            text: text.substring(lastEnd, match.start),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+          ),
+        );
       }
 
       // Add highlighted tag
       final tag = match.group(0)!;
       final label = match.group(1)!;
-      spans.add(TextSpan(
-        text: tag,
-        style: TextStyle(
-          color: _getTagColor(label),
-          backgroundColor: _getTagColor(label).withOpacity(0.2),
-          fontWeight: FontWeight.w600,
+      spans.add(
+        TextSpan(
+          text: tag,
+          style: TextStyle(
+            color: _getTagColor(label),
+            backgroundColor: _getTagColor(label).withValues(alpha: 0.2),
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ));
+      );
 
       lastEnd = match.end;
     }
 
     // Add remaining text
     if (lastEnd < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(lastEnd),
-        style: TextStyle(color: Colors.white.withOpacity(0.9)),
-      ));
+      spans.add(
+        TextSpan(
+          text: text.substring(lastEnd),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+        ),
+      );
     }
 
     return SelectableText.rich(
@@ -629,9 +688,9 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         tag,
@@ -645,4 +704,3 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
     );
   }
 }
-
