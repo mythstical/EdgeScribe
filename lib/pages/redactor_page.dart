@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:edgescribe/services/medical_redaction_service.dart';
+import 'package:edgescribe/services/cactus_model_service.dart';
 
 /// Production Medical Redactor UI with:
 /// - Loading Dictionaries state on launch
 /// - Green RichText highlighting for redacted tags
 /// - Debug toggle for LLM Layer 3
 /// - Per-layer timing metrics
+///
+/// NOTE: The LLM model is now loaded globally at app startup via CactusModelService.
+/// This page opens instantly without waiting for model initialization.
 class RedactorPage extends StatefulWidget {
   const RedactorPage({super.key});
 
@@ -20,11 +24,8 @@ class _RedactorPageState extends State<RedactorPage> {
 
   // State
   bool _loadingDictionaries = true;
-  bool _initializingLLM = false;
   bool _processing = false;
   bool _llmEnabled = true;
-  String _llmStatus = '';
-  double? _llmProgress;
   RedactionResult? _result;
 
   static const String _exampleText =
@@ -60,53 +61,6 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
     } finally {
       if (mounted) {
         setState(() => _loadingDictionaries = false);
-      }
-    }
-  }
-
-  Future<void> _initializeLLM() async {
-    if (!mounted) return;
-    setState(() {
-      _initializingLLM = true;
-      _llmStatus = 'Starting...';
-      _llmProgress = null;
-    });
-
-    try {
-      await _service.initializeLLM(
-        onProgress: (progress, status, isError) {
-          if (!mounted) return;
-          setState(() {
-            _llmProgress = progress;
-            _llmStatus = status;
-          });
-        },
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('LLM ready - Layer 3 enabled'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('LLM init failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _initializingLLM = false;
-          _llmStatus = '';
-          _llmProgress = null;
-        });
       }
     }
   }
@@ -223,12 +177,6 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
             _buildStatusCard(),
             const SizedBox(height: 16),
 
-            // LLM Init Button (if not ready and enabled)
-            if (!_service.llmReady && _llmEnabled) ...[
-              _buildLLMInitSection(),
-              const SizedBox(height: 16),
-            ],
-
             // Input Section
             _buildInputSection(),
             const SizedBox(height: 16),
@@ -250,7 +198,8 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
   }
 
   Widget _buildStatusCard() {
-    final llmReady = _service.llmReady;
+    final modelService = CactusModelService.instance;
+    final llmReady = modelService.isLoaded;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -274,7 +223,7 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              llmReady ? Icons.shield : Icons.shield_outlined,
+              llmReady ? Icons.psychology : Icons.psychology_outlined,
               color: llmReady
                   ? const Color(0xFF00D9FF)
                   : const Color(0xFFFFB800),
@@ -287,8 +236,8 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
               children: [
                 Text(
                   llmReady
-                      ? 'Full Protection (3 Layers)'
-                      : 'Basic Protection (2 Layers)',
+                      ? 'Neural Engine Active (3 Layers)'
+                      : 'Neural Engine Loading...',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -298,8 +247,8 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
                 const SizedBox(height: 4),
                 Text(
                   llmReady
-                      ? 'Regex + Dictionary + LLM'
-                      : 'Regex + Dictionary only. Enable LLM for names/orgs.',
+                      ? 'Regex + Dictionary + Qwen 0.6B (Resident in RAM)'
+                      : modelService.loadingStatus,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 12,
@@ -308,61 +257,6 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLLMInitSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF16213E).withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Column(
-        children: [
-          ElevatedButton.icon(
-            onPressed: _initializingLLM ? null : _initializeLLM,
-            icon: _initializingLLM
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.download),
-            label: Text(
-              _initializingLLM ? 'Initializing...' : 'Initialize LLM (Layer 3)',
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00D9FF),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-          ),
-          if (_initializingLLM && _llmStatus.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              _llmStatus,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 12,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (_llmProgress != null) ...[
-              const SizedBox(height: 8),
-              LinearProgressIndicator(
-                value: _llmProgress,
-                backgroundColor: Colors.white12,
-                valueColor: const AlwaysStoppedAnimation(Color(0xFF00D9FF)),
-              ),
-            ],
-          ],
         ],
       ),
     );
@@ -663,6 +557,8 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
         return const Color(0xFF00D9FF);
       case 'ORG':
         return const Color(0xFF3498DB);
+      case 'INSURANCE':
+        return const Color(0xFFFF9F1C); // Orange for insurance
       default:
         return const Color(0xFF00FF88); // Default green
     }
@@ -677,6 +573,7 @@ Emergency contact: Alice Johnson at Mercy General Hospital.''';
         _buildLegendItem('[PHONE]', const Color(0xFFFFB800)),
         _buildLegendItem('[DATE]', const Color(0xFF9B59B6)),
         _buildLegendItem('[ID]', const Color(0xFFE74C3C)),
+        _buildLegendItem('[INSURANCE]', const Color(0xFFFF9F1C)),
         _buildLegendItem('[LOC]', const Color(0xFF00FF88)),
         _buildLegendItem('[PERSON]', const Color(0xFF00D9FF)),
         _buildLegendItem('[ORG]', const Color(0xFF3498DB)),

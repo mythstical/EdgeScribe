@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:cactus/cactus.dart';
+import 'cactus_model_service.dart';
 
 /// Represents a single redacted entity with position metadata for UI highlighting
 class RedactionEntity {
@@ -79,15 +80,15 @@ class RedactionResult {
 /// Layer 1: Deterministic Regex (<1ms) - Email, Phone, Date, MRN/SSN
 /// Layer 2: Fast Dictionary Lookup (~5ms) - Cities with O(1) HashSet
 /// Layer 3: Cactus LLM Inference (~200ms) - Person Names, Organizations
+///
+/// NOTE: This service now uses the global CactusModelService for the LLM.
+/// The model is loaded once at app startup and shared across all instances.
 class MedicalRedactionService {
-  final CactusLM _lm = CactusLM();
-
   // O(1) lookup sets loaded from assets
   Set<String> _medicalTerms = {};
   Set<String> _cities = {};
 
   bool _dictionariesLoaded = false;
-  bool _llmInitialized = false;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // REGEX PATTERNS (Layer 1)
@@ -98,9 +99,16 @@ class MedicalRedactionService {
     r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
   );
 
-  /// Phone: (555) 123-4567 or 555.123.4567 or 555-123-4567
+  /// Phone: Matches various US phone number formats
+  /// - (555) 123-4567
+  /// - 555.123.4567
+  /// - 555-123-4567
+  /// - 5551234567
+  /// - +1 555-123-4567
+  /// - 1-555-123-4567
+  /// - Also catches international formats with country codes
   static final RegExp _phonePattern = RegExp(
-    r'\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b',
+    r'(?<!\w)(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}(?:\s*(?:ext|extension|x|#)[-.\s]?\d+)?\b',
   );
 
   /// Honorifics/titles followed by capitalized name (catches Dr. X, Patient Y, etc.)
@@ -120,8 +128,44 @@ class MedicalRedactionService {
     caseSensitive: false,
   );
 
-  /// MRN/SSN: ###-##-#### pattern
-  static final RegExp _idPattern = RegExp(r'\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b');
+  /// MRN/SSN/ID: Matches SSN (###-##-####), MRN (various formats like MRN-123456, 12345678)
+  static final RegExp _idPattern = RegExp(
+    r'(?:'
+    r'(?:SSN|MRN|ID|Medical\s+Record|Patient\s+ID)[:\s#-]+\d{5,12}|'  // MRN: 12345678, SSN: 123-45-6789
+    r'\b\d{3}[-\s]\d{2}[-\s]\d{4}\b'                                    // SSN format only: 123-45-6789
+    r')',
+    caseSensitive: false,
+  );
+
+  /// Insurance provider names (e.g., "BlueCross", "Aetna PPO", "UnitedHealth")
+  static final RegExp _insurancePattern = RegExp(
+    r'\b(?:'
+    r'(?:[A-Z][a-z]+)?(?:Shield|Cross|Care|Health|Guard|Plan|Med)\s*(?:PPO|HMO|EPO|POS)?|'
+    r'Aetna|Cigna|Humana|UnitedHealth(?:care)?|Anthem|Kaiser|WellPoint|Centene|'
+    r'Medicare|Medicaid|Blue\s*(?:Cross|Shield)|Silver\s*(?:Shield|Cross)|Gold\s*(?:Shield|Cross)'
+    r')\b',
+    caseSensitive: false,
+  );
+
+  /// Street address: Number + Street name + optional apt/unit + optional city + optional state/ZIP
+  /// Matches: "742 lakeview drive, apt 3b, Riverside, CA 92507"
+  static final RegExp _addressPattern = RegExp(
+    r'\b\d{1,5}\s+(?:[A-Z][a-z]+\s+){1,4}(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd|Way|Court|Ct|Circle|Cir|Place|Pl)'
+    r'(?:,?\s*(?:Apt|Unit|Suite|Ste|#)\s*[A-Za-z0-9-]+)?'
+    r'(?:,?\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?' // Optional city name
+    r'(?:,?\s+[A-Z]{2}\s+\d{5}(?:-\d{4})?)?', // Optional state + ZIP
+    caseSensitive: false,
+  );
+
+  /// ZIP code pattern: 12345 or 12345-6789
+  static final RegExp _zipPattern = RegExp(
+    r'\b\d{5}(?:-\d{4})?\b',
+  );
+
+  /// State abbreviation + ZIP: CA 92507, NY 10001
+  static final RegExp _stateZipPattern = RegExp(
+    r'\b[A-Z]{2}\s+\d{5}(?:-\d{4})?\b',
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // INITIALIZATION
@@ -154,36 +198,27 @@ class MedicalRedactionService {
   }
 
   /// Initialize LLM model for Layer 3
+  ///
+  /// DEPRECATED: The global CactusModelService is now initialized at app startup.
+  /// This method is kept for backward compatibility but delegates to the global service.
   Future<void> initializeLLM({
     Function(double?, String, bool)? onProgress,
   }) async {
-    if (_llmInitialized && _lm.isLoaded()) {
-      print('[Redactor] LLM already loaded');
-      return;
+    print('[Redactor] Delegating LLM initialization to global CactusModelService');
+
+    // The model is already initialized at app startup via CactusModelService
+    // This method now just ensures it's ready
+    if (!CactusModelService.instance.isLoaded) {
+      await CactusModelService.instance.initialize();
     }
 
-    print('[Redactor] Downloading LLM model...');
-    await _lm.downloadModel(
-      model: 'qwen3-0.6',
-      downloadProcessCallback: (progress, status, isError) {
-        onProgress?.call(progress, status, isError);
-        if (isError) {
-          print('[Redactor] Download error: $status');
-        }
-      },
-    );
-
-    print('[Redactor] Initializing LLM...');
-    await _lm.initializeModel(
-      params: CactusInitParams(model: 'qwen3-0.6', contextSize: 2048),
-    );
-
-    _llmInitialized = true;
-    print('[Redactor] LLM ready');
+    print('[Redactor] LLM ready (using global model service)');
   }
 
   bool get dictionariesReady => _dictionariesLoaded;
-  bool get llmReady => _llmInitialized && _lm.isLoaded();
+
+  /// Check if LLM is ready (uses global model service)
+  bool get llmReady => CactusModelService.instance.isLoaded;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // LAYER 1: DETERMINISTIC REGEX (Speed: <1ms)
@@ -198,8 +233,10 @@ class MedicalRedactionService {
     void applyPattern(RegExp pattern, String label) {
       final newResult = StringBuffer();
       var lastEnd = 0;
+      var matchCount = 0;
 
       for (final match in pattern.allMatches(result)) {
+        matchCount++;
         // Add text before match
         newResult.write(result.substring(lastEnd, match.start));
 
@@ -207,21 +244,28 @@ class MedicalRedactionService {
         final originalStart = match.start + offset;
         final originalEnd = match.end + offset;
 
+        final matchedText = match.group(0)!;
         entities.add(
           RedactionEntity(
             label: label,
-            originalValue: match.group(0)!,
+            originalValue: matchedText,
             start: originalStart,
             end: originalEnd,
             layer: 1,
           ),
         );
 
+        print('[Redactor] Regex matched $label: "$matchedText"');
+
         // Add replacement tag
         final tag = '[$label]';
         newResult.write(tag);
 
         lastEnd = match.end;
+      }
+
+      if (matchCount == 0) {
+        print('[Redactor] No matches for $label pattern');
       }
 
       newResult.write(result.substring(lastEnd));
@@ -233,12 +277,28 @@ class MedicalRedactionService {
     }
 
     // Apply patterns in order (most specific first)
+    print('[Redactor] Applying EMAIL pattern...');
     applyPattern(_emailPattern, 'EMAIL');
+    print('[Redactor] Applying PHONE pattern...');
+    print('[Redactor] ==== COMPLETE TEXT BEING SCANNED ====');
+    print(result);
+    print('[Redactor] ==== END OF TEXT ====');
     applyPattern(_phonePattern, 'PHONE');
+    print('[Redactor] Applying ADDRESS pattern (full address with city/state/zip)...');
+    applyPattern(_addressPattern, 'LOC');
+    print('[Redactor] Applying STATE+ZIP pattern...');
+    applyPattern(_stateZipPattern, 'LOC');
+    print('[Redactor] Applying ZIP pattern...');
+    applyPattern(_zipPattern, 'LOC');
+    print('[Redactor] Applying DATE pattern...');
     applyPattern(_datePattern, 'DATE');
+    print('[Redactor] Applying ID pattern to: ${result.substring(0, result.length > 100 ? 100 : result.length)}...');
     applyPattern(_idPattern, 'ID');
+    print('[Redactor] Applying INSURANCE pattern...');
+    applyPattern(_insurancePattern, 'INSURANCE');
 
     // Special handling for honorific + name (keep title, redact name)
+    print('[Redactor] Applying HONORIFIC pattern to: ${result.substring(0, result.length > 100 ? 100 : result.length)}...');
     final honorificResult = StringBuffer();
     var lastEnd = 0;
     for (final match in _honorificPattern.allMatches(result)) {
@@ -246,6 +306,8 @@ class MedicalRedactionService {
 
       final title = match.group(1)!; // "Dr", "Patient", etc.
       final name = match.group(2)!; // "John Smith"
+
+      print('[Redactor] Regex matched PERSON (honorific): "$title. $name"');
 
       entities.add(
         RedactionEntity(
@@ -338,36 +400,42 @@ class MedicalRedactionService {
       return _LLMResult(text: text, hallucinations: 0);
     }
 
-    const prompt =
-        '''Task: Extract Person Names and Facility Names from the text.
-Format: Entity | LABEL
-Rules:
-1. PERSON = human names (first, last, or full)
-2. ORG = hospitals, clinics, medical centers, companies
-3. Do NOT include dates, emails, phones, locations (already redacted)
-4. If none found, output: NOTHING
+    // Few-shot prompt to force format (no reasoning allowed)
+    const systemPrompt = '''Extract person names only.''';
 
-Examples:
-Input: "Dr. Wu visited Mayo Clinic."
-Output:
-Wu | PERSON
-Mayo Clinic | ORG
+    final userPrompt = '''Text: Dr. Smith treated John Doe.
+Names:
+John Doe | PERSON
 
-Input: "The patient has diabetes."
-Output:
+Text: Patient visited clinic.
+Names:
 NOTHING
 
-Input: ''';
+Text: $text
+Names:''';
 
-    final fullPrompt = '$prompt"$text"';
+    // Use the global model instance
+    final model = CactusModelService.instance.model;
 
-    final response = await _lm.generateCompletion(
-      messages: [ChatMessage(content: fullPrompt, role: 'user')],
+    final response = await model.generateCompletion(
+      messages: [
+        ChatMessage(content: systemPrompt, role: 'system'),
+        ChatMessage(content: userPrompt, role: 'user'),
+      ],
       params: CactusCompletionParams(
-        temperature: 0.1,
-        topK: 5,
-        maxTokens: 100,
-        stopSequences: ['Input:', '\n\n\n'],
+        temperature: 0.0,       // Deterministic
+        topK: 3,                // Very focused
+        maxTokens: 50,          // Reduced - just need names
+        stopSequences: [
+          '\n\nText:',
+          '\nText:',
+          'Okay',
+          'So ',
+          'Let me',
+          'First',
+          '<|endoftext|>',
+          '<|im_end|>',
+        ],
       ),
     );
 
@@ -385,11 +453,32 @@ Input: ''';
     var output = responseText;
     print('[Redactor] LLM raw: $output');
 
-    // Strip <think>...</think> artifacts
-    output = output.replaceAll(RegExp(r'<think>.*?</think>', dotAll: true), '');
-    output = output.replaceAll(RegExp(r'<\|.*?\|>'), '');
+    // Aggressive cleaning of thinking artifacts and explanations
+    // Remove <think>...</think> blocks (even incomplete ones)
+    output = output.replaceAll(RegExp(r'<think>.*', dotAll: true), '');
+
+    // Remove any line that looks like reasoning/explanation
+    final lines = output.split('\n');
+    final cleanedLines = <String>[];
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      // Keep only lines that match the "Name | LABEL" format or "NOTHING"
+      if (trimmed.isEmpty) continue;
+      if (trimmed.toUpperCase() == 'NOTHING') {
+        cleanedLines.add(trimmed);
+        break; // Stop processing after NOTHING
+      }
+      if (trimmed.contains('|') && !trimmed.toLowerCase().startsWith('okay') &&
+          !trimmed.toLowerCase().startsWith('so ') && !trimmed.toLowerCase().startsWith('first')) {
+        cleanedLines.add(trimmed);
+      }
+    }
+
+    output = cleanedLines.join('\n');
 
     if (output.trim().toUpperCase() == 'NOTHING' || output.trim().isEmpty) {
+      print('[Redactor] No entities found by LLM');
       return _LLMResult(text: text, hallucinations: 0);
     }
 
@@ -397,12 +486,12 @@ Input: ''';
     var result = text;
     var hallucinations = 0;
 
-    final lines = output
+    final entityLines = output
         .split('\n')
         .map((l) => l.trim())
         .where((l) => l.contains('|'));
 
-    for (final line in lines) {
+    for (final line in entityLines) {
       final parts = line.split('|').map((p) => p.trim()).toList();
       if (parts.length < 2) continue;
 
@@ -549,14 +638,12 @@ Input: ''';
   /// Generate embeddings using the loaded CactusLM model
   Future<List<double>> generateEmbedding(String text) async {
     if (!llmReady) {
-      // If not initialized, try to initialize
-      await initializeLLM();
-      if (!llmReady) {
-        throw Exception('CactusLM not initialized');
-      }
+      throw Exception('CactusLM not initialized (global model service not ready)');
     }
 
-    final result = await _lm.generateEmbedding(text: text);
+    // Use the global model instance
+    final model = CactusModelService.instance.model;
+    final result = await model.generateEmbedding(text: text);
 
     if (result.success) {
       return result.embeddings;
@@ -566,9 +653,14 @@ Input: ''';
   }
 
   /// Clean up resources
+  ///
+  /// NOTE: This no longer unloads the LLM model since it's now global.
+  /// The model stays resident in memory for use by all features.
   void dispose() {
-    _lm.unload();
-    _llmInitialized = false;
+    // Dictionary cleanup only - model is managed globally
+    _medicalTerms.clear();
+    _cities.clear();
+    _dictionariesLoaded = false;
   }
 }
 
