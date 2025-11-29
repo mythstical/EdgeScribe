@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/conversation.dart';
 import 'recorder_page.dart';
 import 'privacy_page.dart';
+import 'opportunities_page.dart';
 import '../screens/api_key_setup_screen.dart';
 import '../services/transcription_service.dart';
 
@@ -89,35 +90,7 @@ class _ConversationDetailsPageState extends State<ConversationDetailsPage> {
           children: [
             RecorderPage(conversation: widget.conversation, showAppBar: false),
             PrivacyPage(conversation: widget.conversation),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.lightbulb_outline,
-                    size: 64,
-                    color: Colors.white.withValues(alpha: 0.2),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Opportunities',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Coming soon...',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            OpportunitiesPage(conversation: widget.conversation),
           ],
         ),
       ),

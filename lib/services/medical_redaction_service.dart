@@ -3,11 +3,11 @@ import 'package:cactus/cactus.dart';
 
 /// Represents a single redacted entity with position metadata for UI highlighting
 class RedactionEntity {
-  final String label;         // e.g., "EMAIL", "PHONE", "PERSON", "ORG", "LOC"
+  final String label; // e.g., "EMAIL", "PHONE", "PERSON", "ORG", "LOC"
   final String originalValue; // The actual PII text that was redacted
-  final int start;            // Start position in original text
-  final int end;              // End position in original text
-  final int layer;            // Which layer detected it (1=Regex, 2=Dict, 3=LLM)
+  final int start; // Start position in original text
+  final int end; // End position in original text
+  final int layer; // Which layer detected it (1=Regex, 2=Dict, 3=LLM)
 
   RedactionEntity({
     required this.label,
@@ -18,7 +18,8 @@ class RedactionEntity {
   });
 
   @override
-  String toString() => 'RedactionEntity($label: "$originalValue" at $start-$end, L$layer)';
+  String toString() =>
+      'RedactionEntity($label: "$originalValue" at $start-$end, L$layer)';
 }
 
 /// Per-layer timing metrics
@@ -36,7 +37,8 @@ class LayerMetrics {
   });
 
   @override
-  String toString() => 'L1: ${layer1RegexMs}ms, L2: ${layer2DictMs}ms, L3: ${layer3LlmMs}ms, Total: ${totalMs}ms';
+  String toString() =>
+      'L1: ${layer1RegexMs}ms, L2: ${layer2DictMs}ms, L3: ${layer3LlmMs}ms, Total: ${totalMs}ms';
 }
 
 /// Structured result from the redaction pipeline
@@ -73,17 +75,17 @@ class RedactionResult {
 
 /// Production-ready Medical Redaction Service using 3-Layer Filter Architecture
 /// Optimized for Nothing Phone (2) - Snapdragon 8+ Gen 1
-/// 
+///
 /// Layer 1: Deterministic Regex (<1ms) - Email, Phone, Date, MRN/SSN
 /// Layer 2: Fast Dictionary Lookup (~5ms) - Cities with O(1) HashSet
 /// Layer 3: Cactus LLM Inference (~200ms) - Person Names, Organizations
 class MedicalRedactionService {
   final CactusLM _lm = CactusLM();
-  
+
   // O(1) lookup sets loaded from assets
   Set<String> _medicalTerms = {};
   Set<String> _cities = {};
-  
+
   bool _dictionariesLoaded = false;
   bool _llmInitialized = false;
 
@@ -119,9 +121,7 @@ class MedicalRedactionService {
   );
 
   /// MRN/SSN: ###-##-#### pattern
-  static final RegExp _idPattern = RegExp(
-    r'\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b',
-  );
+  static final RegExp _idPattern = RegExp(r'\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b');
 
   // ═══════════════════════════════════════════════════════════════════════════
   // INITIALIZATION
@@ -148,7 +148,9 @@ class MedicalRedactionService {
         .toSet();
 
     _dictionariesLoaded = true;
-    print('[Redactor] Dictionaries loaded: ${_medicalTerms.length} medical terms, ${_cities.length} cities');
+    print(
+      '[Redactor] Dictionaries loaded: ${_medicalTerms.length} medical terms, ${_cities.length} cities',
+    );
   }
 
   /// Initialize LLM model for Layer 3
@@ -173,10 +175,7 @@ class MedicalRedactionService {
 
     print('[Redactor] Initializing LLM...');
     await _lm.initializeModel(
-      params: CactusInitParams(
-        model: 'qwen3-0.6',
-        contextSize: 2048,
-      ),
+      params: CactusInitParams(model: 'qwen3-0.6', contextSize: 2048),
     );
 
     _llmInitialized = true;
@@ -203,28 +202,30 @@ class MedicalRedactionService {
       for (final match in pattern.allMatches(result)) {
         // Add text before match
         newResult.write(result.substring(lastEnd, match.start));
-        
+
         // Record entity at original position
         final originalStart = match.start + offset;
         final originalEnd = match.end + offset;
-        
-        entities.add(RedactionEntity(
-          label: label,
-          originalValue: match.group(0)!,
-          start: originalStart,
-          end: originalEnd,
-          layer: 1,
-        ));
+
+        entities.add(
+          RedactionEntity(
+            label: label,
+            originalValue: match.group(0)!,
+            start: originalStart,
+            end: originalEnd,
+            layer: 1,
+          ),
+        );
 
         // Add replacement tag
         final tag = '[$label]';
         newResult.write(tag);
-        
+
         lastEnd = match.end;
       }
 
       newResult.write(result.substring(lastEnd));
-      
+
       // Update offset for position tracking
       final oldLength = result.length;
       result = newResult.toString();
@@ -242,17 +243,19 @@ class MedicalRedactionService {
     var lastEnd = 0;
     for (final match in _honorificPattern.allMatches(result)) {
       honorificResult.write(result.substring(lastEnd, match.start));
-      
-      final title = match.group(1)!;  // "Dr", "Patient", etc.
-      final name = match.group(2)!;   // "John Smith"
-      
-      entities.add(RedactionEntity(
-        label: 'PERSON',
-        originalValue: name,
-        start: match.start + title.length + 1 + offset,  // Position of name
-        end: match.end + offset,
-        layer: 1,
-      ));
+
+      final title = match.group(1)!; // "Dr", "Patient", etc.
+      final name = match.group(2)!; // "John Smith"
+
+      entities.add(
+        RedactionEntity(
+          label: 'PERSON',
+          originalValue: name,
+          start: match.start + title.length + 1 + offset, // Position of name
+          end: match.end + offset,
+          layer: 1,
+        ),
+      );
 
       // Keep the title, redact the name
       honorificResult.write('$title. [PERSON]');
@@ -274,28 +277,26 @@ class MedicalRedactionService {
 
     var result = text;
     final words = <_WordToken>[];
-    
+
     // Tokenize text while preserving positions
     final wordPattern = RegExp(r'\b[A-Za-z]+(?:\s+[A-Za-z]+)?\b');
     for (final match in wordPattern.allMatches(text)) {
-      words.add(_WordToken(
-        text: match.group(0)!,
-        start: match.start,
-        end: match.end,
-      ));
+      words.add(
+        _WordToken(text: match.group(0)!, start: match.start, end: match.end),
+      );
     }
 
     // Check each word/phrase against dictionaries
     final toRedact = <_WordToken>[];
-    
+
     for (final word in words) {
       final lower = word.text.toLowerCase();
-      
+
       // Check if Title Case (potential location)
       final isTitleCase = word.text[0] == word.text[0].toUpperCase();
-      
-      if (isTitleCase && 
-          _cities.contains(lower) && 
+
+      if (isTitleCase &&
+          _cities.contains(lower) &&
           !_medicalTerms.contains(lower)) {
         toRedact.add(word);
       }
@@ -303,19 +304,22 @@ class MedicalRedactionService {
 
     // Apply redactions in reverse order to preserve positions
     toRedact.sort((a, b) => b.start.compareTo(a.start));
-    
+
     for (final word in toRedact) {
-      entities.add(RedactionEntity(
-        label: 'LOC',
-        originalValue: word.text,
-        start: word.start,
-        end: word.end,
-        layer: 2,
-      ));
-      
-      result = result.substring(0, word.start) + 
-               '[LOC]' + 
-               result.substring(word.end);
+      entities.add(
+        RedactionEntity(
+          label: 'LOC',
+          originalValue: word.text,
+          start: word.start,
+          end: word.end,
+          layer: 2,
+        ),
+      );
+
+      result =
+          result.substring(0, word.start) +
+          '[LOC]' +
+          result.substring(word.end);
     }
 
     return result;
@@ -326,12 +330,16 @@ class MedicalRedactionService {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// Use LLM to extract Person Names and Organizations
-  Future<_LLMResult> _applyCactusLLM(String text, List<RedactionEntity> entities) async {
+  Future<_LLMResult> _applyCactusLLM(
+    String text,
+    List<RedactionEntity> entities,
+  ) async {
     if (!llmReady) {
       return _LLMResult(text: text, hallucinations: 0);
     }
 
-    const prompt = '''Task: Extract Person Names and Facility Names from the text.
+    const prompt =
+        '''Task: Extract Person Names and Facility Names from the text.
 Format: Entity | LABEL
 Rules:
 1. PERSON = human names (first, last, or full)
@@ -354,9 +362,7 @@ Input: ''';
     final fullPrompt = '$prompt"$text"';
 
     final response = await _lm.generateCompletion(
-      messages: [
-        ChatMessage(content: fullPrompt, role: 'user'),
-      ],
+      messages: [ChatMessage(content: fullPrompt, role: 'user')],
       params: CactusCompletionParams(
         temperature: 0.1,
         topK: 5,
@@ -390,8 +396,9 @@ Input: ''';
     // Parse entities
     var result = text;
     var hallucinations = 0;
-    
-    final lines = output.split('\n')
+
+    final lines = output
+        .split('\n')
         .map((l) => l.trim())
         .where((l) => l.contains('|'));
 
@@ -411,8 +418,11 @@ Input: ''';
       }
 
       // Validate: Does entity exist in current text?
-      final pattern = RegExp(r'\b' + RegExp.escape(entity) + r'\b', caseSensitive: false);
-      
+      final pattern = RegExp(
+        r'\b' + RegExp.escape(entity) + r'\b',
+        caseSensitive: false,
+      );
+
       if (!pattern.hasMatch(result)) {
         print('[Redactor] HALLUCINATION BLOCKED: "$entity"');
         hallucinations++;
@@ -432,13 +442,15 @@ Input: ''';
       // Find and record entity position in original text
       final match = pattern.firstMatch(result);
       if (match != null) {
-        entities.add(RedactionEntity(
-          label: label,
-          originalValue: entity,
-          start: match.start,
-          end: match.end,
-          layer: 3,
-        ));
+        entities.add(
+          RedactionEntity(
+            label: label,
+            originalValue: entity,
+            start: match.start,
+            end: match.end,
+            layer: 3,
+          ),
+        );
       }
 
       // Apply redaction
@@ -482,19 +494,23 @@ Input: ''';
     final l1Stopwatch = Stopwatch()..start();
     var currentText = _applyRegexRules(text, entities);
     l1Stopwatch.stop();
-    print('[Redactor] Layer 1 (Regex): ${l1Stopwatch.elapsedMilliseconds}ms, ${entities.length} entities');
+    print(
+      '[Redactor] Layer 1 (Regex): ${l1Stopwatch.elapsedMilliseconds}ms, ${entities.length} entities',
+    );
 
     // LAYER 2: Dictionary
     final l2Stopwatch = Stopwatch()..start();
     currentText = _applyDictionaries(currentText, entities);
     l2Stopwatch.stop();
     final l2Count = entities.where((e) => e.layer == 2).length;
-    print('[Redactor] Layer 2 (Dict): ${l2Stopwatch.elapsedMilliseconds}ms, $l2Count entities');
+    print(
+      '[Redactor] Layer 2 (Dict): ${l2Stopwatch.elapsedMilliseconds}ms, $l2Count entities',
+    );
 
     // LAYER 3: LLM (optional)
     int hallucinations = 0;
     int l3Ms = 0;
-    
+
     if (enableLLM && llmReady) {
       final l3Stopwatch = Stopwatch()..start();
       final llmResult = await _applyCactusLLM(currentText, entities);
@@ -503,7 +519,9 @@ Input: ''';
       l3Stopwatch.stop();
       l3Ms = l3Stopwatch.elapsedMilliseconds;
       final l3Count = entities.where((e) => e.layer == 3).length;
-      print('[Redactor] Layer 3 (LLM): ${l3Ms}ms, $l3Count entities, $hallucinations blocked');
+      print(
+        '[Redactor] Layer 3 (LLM): ${l3Ms}ms, $l3Count entities, $hallucinations blocked',
+      );
     }
 
     totalStopwatch.stop();
@@ -526,6 +544,25 @@ Input: ''';
   /// Run Layer 1 + 2 only (fast mode, no LLM)
   Future<RedactionResult> redactFast(String text) async {
     return redact(text, enableLLM: false);
+  }
+
+  /// Generate embeddings using the loaded CactusLM model
+  Future<List<double>> generateEmbedding(String text) async {
+    if (!llmReady) {
+      // If not initialized, try to initialize
+      await initializeLLM();
+      if (!llmReady) {
+        throw Exception('CactusLM not initialized');
+      }
+    }
+
+    final result = await _lm.generateEmbedding(text: text);
+
+    if (result.success) {
+      return result.embeddings;
+    } else {
+      throw Exception('Embedding generation failed: ${result.errorMessage}');
+    }
   }
 
   /// Clean up resources
@@ -551,4 +588,3 @@ class _LLMResult {
 
   _LLMResult({required this.text, required this.hallucinations});
 }
-
