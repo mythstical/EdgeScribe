@@ -1,0 +1,254 @@
+# US Cities Dictionary - Redact as [LOC]
+# One city per line, lowercase
+# Top 300 US cities by population
+
+new york
+los angeles
+chicago
+houston
+phoenix
+philadelphia
+san antonio
+san diego
+dallas
+san jose
+austin
+jacksonville
+fort worth
+columbus
+charlotte
+san francisco
+indianapolis
+seattle
+denver
+boston
+el paso
+nashville
+detroit
+oklahoma city
+portland
+las vegas
+memphis
+louisville
+baltimore
+milwaukee
+albuquerque
+tucson
+fresno
+mesa
+sacramento
+atlanta
+kansas city
+colorado springs
+omaha
+raleigh
+miami
+long beach
+virginia beach
+oakland
+minneapolis
+tulsa
+tampa
+arlington
+new orleans
+wichita
+cleveland
+bakersfield
+aurora
+anaheim
+honolulu
+santa ana
+riverside
+corpus christi
+lexington
+stockton
+st louis
+pittsburgh
+anchorage
+cincinnati
+henderson
+greensboro
+plano
+newark
+lincoln
+orlando
+irvine
+toledo
+jersey city
+chula vista
+durham
+fort wayne
+st petersburg
+laredo
+buffalo
+madison
+lubbock
+chandler
+scottsdale
+glendale
+reno
+norfolk
+winston salem
+north las vegas
+gilbert
+chesapeake
+irving
+hialeah
+garland
+fremont
+baton rouge
+richmond
+boise
+san bernardino
+spokane
+des moines
+modesto
+birmingham
+tacoma
+fontana
+rochester
+oxnard
+moreno valley
+fayetteville
+glendale
+yonkers
+huntington beach
+aurora
+salt lake city
+amarillo
+montgomery
+grand rapids
+little rock
+akron
+shreveport
+augusta
+grand prairie
+overland park
+tallahassee
+mobile
+huntsville
+tempe
+cape coral
+knoxville
+worcester
+providence
+newport news
+chattanooga
+rancho cucamonga
+oceanside
+santa clarita
+ontario
+garden grove
+vancouver
+sioux falls
+elk grove
+springfield
+pembroke pines
+salem
+eugene
+fort collins
+peoria
+corona
+cary
+lancaster
+palmdale
+salinas
+hayward
+pomona
+fort lauderdale
+alexandria
+escondido
+sunnyvale
+pasadena
+lakewood
+kansas city
+rockford
+torrance
+hollywood
+bridgeport
+joliet
+naperville
+paterson
+savannah
+mesquite
+syracuse
+midland
+mckinney
+pasadena
+murfreesboro
+clarksville
+killeen
+miramar
+frisco
+hampton
+bellevue
+warren
+west valley city
+columbia
+olathe
+sterling heights
+thornton
+new haven
+waco
+charleston
+thousand oaks
+visalia
+cedar rapids
+elizabeth
+roseville
+gainesville
+carrollton
+stamford
+denton
+midland
+coral springs
+concord
+topeka
+simi valley
+surprise
+lafayette
+kent
+hartford
+victorville
+abilene
+evansville
+santa clara
+athens
+vallejo
+allentown
+berkeley
+norman
+ann arbor
+beaumont
+independence
+columbia
+springfield
+provo
+peoria
+el monte
+downey
+waterbury
+brownsville
+clearwater
+costa mesa
+inglewood
+miami gardens
+west covina
+manchester
+high point
+murrieta
+pueblo
+richmond
+lowell
+billings
+arvada
+westminster
+elgin
+antioch
+erie
+fairfield
+rochester
+cambridge
+clovis
+fargo
+
